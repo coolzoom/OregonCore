@@ -160,6 +160,7 @@ ScriptMgr::~ScriptMgr()
     SCR_CLEAR(AuraHandlerScript);
     SCR_CLEAR(ServerScript);
     SCR_CLEAR(WorldScript);
+	SCR_CLEAR(PlayerScript);
     SCR_CLEAR(FormulaScript);
     SCR_CLEAR(WorldMapScript);
     SCR_CLEAR(InstanceMapScript);
@@ -212,10 +213,10 @@ struct TSpellSummary
 
 void ScriptMgr::LoadDatabase()
 {
-	sScriptSystemMgr.LoadVersion();
-	sScriptSystemMgr.LoadScriptTexts();
-	sScriptSystemMgr.LoadScriptTextsCustom();
-	sScriptSystemMgr.LoadScriptWaypoints();
+    sScriptSystemMgr.LoadVersion();
+    sScriptSystemMgr.LoadScriptTexts();
+    sScriptSystemMgr.LoadScriptTextsCustom();
+    sScriptSystemMgr.LoadScriptWaypoints();
 }
 
 void FillSpellSummary()
@@ -735,13 +736,13 @@ bool ScriptMgr::OnQuestReward(Player* player, GameObject* go, Quest const* quest
 
 bool ScriptMgr::OnQuestComplete(Player* player, GameObject* gameobject, Quest const* quest)
 {
-	ASSERT(player);
-	ASSERT(gameobject);
-	ASSERT(quest);
+    ASSERT(player);
+    ASSERT(gameobject);
+    ASSERT(quest);
 
-	GET_SCRIPT_RET(GameObjectScript, gameobject->GetScriptId(), tmpscript, false);
-	player->PlayerTalkClass->ClearMenus();
-	return tmpscript->OnQuestComplete(player, gameobject, quest);
+    GET_SCRIPT_RET(GameObjectScript, gameobject->GetScriptId(), tmpscript, false);
+    player->PlayerTalkClass->ClearMenus();
+    return tmpscript->OnQuestComplete(player, gameobject, quest);
 }
 
 uint32 ScriptMgr::GetDialogStatus(Player* player, GameObject* go)
@@ -755,10 +756,10 @@ uint32 ScriptMgr::GetDialogStatus(Player* player, GameObject* go)
 
 void ScriptMgr::OnGameObjectDestroyed(Player * player, GameObject * go, uint32 eventId)
 {
-	ASSERT(go);
+    ASSERT(go);
 
-	GET_SCRIPT(GameObjectScript, go->GetScriptId(), tmpscript);
-	tmpscript->OnDestroyed(player, go, eventId);
+    GET_SCRIPT(GameObjectScript, go->GetScriptId(), tmpscript);
+    tmpscript->OnDestroyed(player, go, eventId);
 }
 
 void ScriptMgr::OnGameObjectUpdate(GameObject* go, uint32 diff)
@@ -925,162 +926,162 @@ void TransportScript::RegisterSelf()
 // Player
 void ScriptMgr::OnPVPKill(Player* killer, Player* killed)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnPVPKill(killer, killed);
+    FOREACH_SCRIPT(PlayerScript)->OnPVPKill(killer, killed);
 }
 
 void ScriptMgr::OnCreatureKill(Player* killer, Creature* killed)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnCreatureKill(killer, killed);
+    FOREACH_SCRIPT(PlayerScript)->OnCreatureKill(killer, killed);
 }
 
 void ScriptMgr::OnPlayerKilledByCreature(Creature* killer, Player* killed)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnPlayerKilledByCreature(killer, killed);
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerKilledByCreature(killer, killed);
 }
 
 void ScriptMgr::OnPlayerLevelChanged(Player* player, uint8 oldLevel, uint8 newLevel)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnLevelChanged(player, oldLevel, newLevel);
+    FOREACH_SCRIPT(PlayerScript)->OnLevelChanged(player, oldLevel, newLevel);
 }
 
 void ScriptMgr::OnPlayerFreeTalentPointsChanged(Player* player, uint32 points)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnFreeTalentPointsChanged(player, points);
+    FOREACH_SCRIPT(PlayerScript)->OnFreeTalentPointsChanged(player, points);
 }
 
 void ScriptMgr::OnPlayerTalentsReset(Player* player, bool noCost)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnTalentsReset(player, noCost);
+    FOREACH_SCRIPT(PlayerScript)->OnTalentsReset(player, noCost);
 }
 
 void ScriptMgr::OnPlayerMoneyChanged(Player* player, int32& amount)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnMoneyChanged(player, amount);
+    FOREACH_SCRIPT(PlayerScript)->OnMoneyChanged(player, amount);
 }
 
 void ScriptMgr::OnPlayerMoneyLimit(Player* player, int32 amount)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnMoneyLimit(player, amount);
+    FOREACH_SCRIPT(PlayerScript)->OnMoneyLimit(player, amount);
 }
 
 void ScriptMgr::OnGivePlayerXP(Player* player, uint32& amount, Unit* victim)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnGiveXP(player, amount, victim);
+    FOREACH_SCRIPT(PlayerScript)->OnGiveXP(player, amount, victim);
 }
 
 void ScriptMgr::OnPlayerReputationChange(Player* player, uint32 factionID, int32& standing, bool incremental)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnReputationChange(player, factionID, standing, incremental);
+    FOREACH_SCRIPT(PlayerScript)->OnReputationChange(player, factionID, standing, incremental);
 }
 
 void ScriptMgr::OnPlayerDuelRequest(Player* target, Player* challenger)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnDuelRequest(target, challenger);
+    FOREACH_SCRIPT(PlayerScript)->OnDuelRequest(target, challenger);
 }
 
 void ScriptMgr::OnPlayerDuelStart(Player* player1, Player* player2)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnDuelStart(player1, player2);
+    FOREACH_SCRIPT(PlayerScript)->OnDuelStart(player1, player2);
 }
 
 void ScriptMgr::OnPlayerDuelEnd(Player* winner, Player* loser, DuelCompleteType type)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnDuelEnd(winner, loser, type);
+    FOREACH_SCRIPT(PlayerScript)->OnDuelEnd(winner, loser, type);
 }
 
 void ScriptMgr::OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg);
+    FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg);
 }
 
 void ScriptMgr::OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Player* receiver)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, receiver);
+    FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, receiver);
 }
 
 void ScriptMgr::OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Group* group)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, group);
+    FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, group);
 }
 
 void ScriptMgr::OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Guild* guild)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, guild);
+    FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, guild);
 }
 
 void ScriptMgr::OnPlayerChat(Player* player, uint32 type, uint32 lang, std::string& msg, Channel* channel)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, channel);
+    FOREACH_SCRIPT(PlayerScript)->OnChat(player, type, lang, msg, channel);
 }
 
 void ScriptMgr::OnPlayerEmote(Player* player, uint32 emote)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnEmote(player, emote);
+    FOREACH_SCRIPT(PlayerScript)->OnEmote(player, emote);
 }
 
 void ScriptMgr::OnPlayerTextEmote(Player* player, uint32 textEmote, uint32 emoteNum, ObjectGuid guid)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnTextEmote(player, textEmote, emoteNum, guid);
+    FOREACH_SCRIPT(PlayerScript)->OnTextEmote(player, textEmote, emoteNum, guid);
 }
 
 void ScriptMgr::OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnSpellCast(player, spell, skipCheck);
+    FOREACH_SCRIPT(PlayerScript)->OnSpellCast(player, spell, skipCheck);
 }
 
 void ScriptMgr::OnPlayerLogin(Player* player, bool firstLogin)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnLogin(player, firstLogin);
+    FOREACH_SCRIPT(PlayerScript)->OnLogin(player, firstLogin);
 }
 
 void ScriptMgr::OnPlayerLogout(Player* player)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnLogout(player);
+    FOREACH_SCRIPT(PlayerScript)->OnLogout(player);
 }
 
 void ScriptMgr::OnPlayerCreate(Player* player)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnCreate(player);
+    FOREACH_SCRIPT(PlayerScript)->OnCreate(player);
 }
 
 void ScriptMgr::OnPlayerDelete(ObjectGuid guid, uint32 accountId)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnDelete(guid, accountId);
+    FOREACH_SCRIPT(PlayerScript)->OnDelete(guid, accountId);
 }
 
 void ScriptMgr::OnPlayerFailedDelete(ObjectGuid guid, uint32 accountId)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnFailedDelete(guid, accountId);
+    FOREACH_SCRIPT(PlayerScript)->OnFailedDelete(guid, accountId);
 }
 
 void ScriptMgr::OnPlayerSave(Player* player)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnSave(player);
+    FOREACH_SCRIPT(PlayerScript)->OnSave(player);
 }
 
 void ScriptMgr::OnPlayerBindToInstance(Player* player, DungeonDifficulty difficulty, uint32 mapid, bool permanent, uint8 extendState)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnBindToInstance(player, difficulty, mapid, permanent, extendState);
+    FOREACH_SCRIPT(PlayerScript)->OnBindToInstance(player, difficulty, mapid, permanent, extendState);
 }
 
 void ScriptMgr::OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnUpdateZone(player, newZone, newArea);
+    FOREACH_SCRIPT(PlayerScript)->OnUpdateZone(player, newZone, newArea);
 }
 
 void ScriptMgr::OnQuestStatusChange(Player* player, uint32 questId)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnQuestStatusChange(player, questId);
+    FOREACH_SCRIPT(PlayerScript)->OnQuestStatusChange(player, questId);
 }
 
 void ScriptMgr::OnPlayerRepop(Player* player)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnPlayerRepop(player);
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerRepop(player);
 }
 
 void ScriptMgr::OnQuestObjectiveProgress(Player* player, Quest const* quest, uint32 objectiveIndex, uint16 progress)
 {
-	FOREACH_SCRIPT(PlayerScript)->OnQuestObjectiveProgress(player, quest, objectiveIndex, progress);
+    FOREACH_SCRIPT(PlayerScript)->OnQuestObjectiveProgress(player, quest, objectiveIndex, progress);
 }
 
 template<class TScript>
@@ -1159,6 +1160,7 @@ template class ScriptMgr::ScriptRegistry<SpellHandlerScript>;
 template class ScriptMgr::ScriptRegistry<AuraHandlerScript>;
 template class ScriptMgr::ScriptRegistry<ServerScript>;
 template class ScriptMgr::ScriptRegistry<WorldScript>;
+template class ScriptMgr::ScriptRegistry<PlayerScript>;
 template class ScriptMgr::ScriptRegistry<FormulaScript>;
 template class ScriptMgr::ScriptRegistry<WorldMapScript>;
 template class ScriptMgr::ScriptRegistry<InstanceMapScript>;
