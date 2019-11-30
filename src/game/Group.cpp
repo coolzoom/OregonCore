@@ -299,7 +299,7 @@ bool Group::AddMember(const uint64& guid, const char* name)
                 player->SetDifficulty(m_difficulty);
                 player->SendDungeonDifficulty(true);
             }
-            sScriptMgr.OnGroupPlayerJoined(this, player);
+            sScriptMgr.OnGroupMemberJoin(this, player);
         }
         player->SetGroupUpdateFlag(GROUP_UPDATE_FULL);
         UpdatePlayerOutOfRange(player);
