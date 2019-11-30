@@ -209,6 +209,38 @@ public:
     virtual void OnUpdate(void* null, uint32 diff) { }
 };
 
+class GroupScript : public ScriptObject
+{
+protected:
+
+    GroupScript(char const* name)
+    : ScriptObject(name)
+    { }
+
+public:
+
+    // Called when a member is added to a group.
+    virtual void OnAddMember(Group* /*group*/, Player* /*guid*/) { }
+
+    // Called when a member is invited to join a group.
+    virtual void OnInviteMember(Group* /*group*/, Player* /*guid*/) { }
+
+    // Called when a member is joined a group.
+    virtual void OnMemberJoin(Group* /*group*/, Player* /*player*/) { }
+
+    // Called when a member is removed from a group.
+    virtual void OnRemoveMember(Group* /*group*/, Player* /*guid*/, RemoveMethod /*method*/, uint64 /*kicker*/, char const* /*reason*/) { }
+
+    // Called when the leader of a group is changed.
+    virtual void OnChangeLeader(Group* /*group*/, Player* /*newLeader*/, Player* /*oldLeader*/) { }
+
+    // Called when a group is disbanded.
+    virtual void OnCreate(Group* /*group*/, Player* /*Leader*/) { }
+
+    // Called when a group is disbanded.
+    virtual void OnDisband(Group* /*group*/, Player* /*Leader*/) { }
+};
+
 class PlayerScript : public ScriptObject
 {
 protected:
@@ -653,16 +685,16 @@ protected:
 public:
 
     // Called when an auction is added to an auction house.
-    void OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry) { }
+    virtual void OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry) { }
 
     // Called when an auction is removed from an auction house.
-    void OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry) { }
+    virtual void OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry) { }
 
     // Called when an auction was succesfully completed.
-    void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry) { }
+    virtual void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry) { }
 
     // Called when an auction expires.
-    void OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry) { }
+    virtual void OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry) { }
 };
 
 class ConditionScript : public ScriptObject
@@ -842,13 +874,23 @@ public: /* WeatherScript */
 public: /* AuctionHouseScript */
 
     void OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry);
+    void OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry);
     void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry);
     void OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry);
-
-
+    
 public: /* DynamicObjectScript */
 
     void OnDynamicObjectUpdate(DynamicObject* dynobj, uint32 diff);
+
+public: /* GroupScript */
+
+    void OnGroupAddMember(Group* group, Player* guid);
+    void OnGroupInviteMember(Group* group, Player* guid);
+    void OnGroupMemberJoin(Group* group, Player* player);
+    void OnGroupRemoveMember(Group* group, Player* guid, RemoveMethod method, uint64 kicker, char const* reason);
+    void OnGroupChangeLeader(Group* group, Player* newLeaderGuid, Player* oldLeaderGuid);
+    void OnGroupCreate(Group* group, Player* leader);
+    void OnGroupDisband(Group* group, Player* leader);
 
 public: /* PlayerScript */
 

@@ -161,6 +161,7 @@ ScriptMgr::~ScriptMgr()
     SCR_CLEAR(ServerScript);
     SCR_CLEAR(WorldScript);
 	SCR_CLEAR(PlayerScript);
+    SCR_CLEAR(GroupScript);
     SCR_CLEAR(FormulaScript);
     SCR_CLEAR(WorldMapScript);
     SCR_CLEAR(InstanceMapScript);
@@ -796,6 +797,14 @@ void ScriptMgr::OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry)
     ASSERT(ah);
     ASSERT(entry);
 
+    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionAdd(ah, entry);
+}
+
+void ScriptMgr::OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry)
+{
+    ASSERT(ah);
+    ASSERT(entry);
+
     FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionRemove(ah, entry);
 }
 
@@ -922,6 +931,50 @@ void TransportScript::RegisterSelf()
 {
     ScriptMgr::ScriptRegistry<TransportScript>::AddScript(this);
 }
+
+// Group
+void ScriptMgr::OnGroupAddMember(Group* group, Player* guid)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnAddMember(group, guid);
+}
+
+void ScriptMgr::OnGroupInviteMember(Group* group, Player* guid)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnInviteMember(group, guid);
+}
+
+void ScriptMgr::OnGroupRemoveMember(Group* group, Player* guid, RemoveMethod method, uint64 kicker, char const* reason)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnRemoveMember(group, guid, method, kicker, reason);
+}
+
+void ScriptMgr::OnGroupMemberJoin(Group* group, Player* player)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnMemberJoin(group, player);
+}
+
+void ScriptMgr::OnGroupChangeLeader(Group* group, Player* newLeader, Player* oldLeader)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnChangeLeader(group, newLeader, oldLeader);
+}
+
+void ScriptMgr::OnGroupCreate(Group* group, Player* leader)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnCreate(group, leader);
+}
+
+void ScriptMgr::OnGroupDisband(Group* group, Player* leader)
+{
+    ASSERT(group);
+    FOREACH_SCRIPT(GroupScript)->OnDisband(group, leader);
+}
+
 
 // Player
 void ScriptMgr::OnPVPKill(Player* killer, Player* killed)
@@ -1161,6 +1214,7 @@ template class ScriptMgr::ScriptRegistry<AuraHandlerScript>;
 template class ScriptMgr::ScriptRegistry<ServerScript>;
 template class ScriptMgr::ScriptRegistry<WorldScript>;
 template class ScriptMgr::ScriptRegistry<PlayerScript>;
+template class ScriptMgr::ScriptRegistry<GroupScript>;
 template class ScriptMgr::ScriptRegistry<FormulaScript>;
 template class ScriptMgr::ScriptRegistry<WorldMapScript>;
 template class ScriptMgr::ScriptRegistry<InstanceMapScript>;

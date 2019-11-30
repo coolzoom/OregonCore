@@ -3298,7 +3298,7 @@ void Spell::SendLoot(uint64 guid, LootType loottype)
 
     if (gameObjTarget)
     {
-        if (sScriptMgr.GOHello(player, gameObjTarget))
+        if (sScriptMgr.OnGossipHello(player, gameObjTarget))
             return;
 
         if (gameObjTarget->AI()->GossipHello(player))
