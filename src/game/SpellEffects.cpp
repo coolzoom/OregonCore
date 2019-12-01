@@ -2233,7 +2233,7 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
     }
 
     if (unitTarget && unitTarget->GetTypeId() == TYPEID_UNIT)
-        sScriptMgr.EffectDummyCreature(m_caster, m_spellInfo->Id, effIndex, unitTarget->ToCreature());
+        sScriptMgr.OnDummyEffect(m_caster, m_spellInfo->Id, effIndex, unitTarget->ToCreature());
 }
 
 void Spell::EffectTriggerSpellWithValue(SpellEffIndex effIndex)
