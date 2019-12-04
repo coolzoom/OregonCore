@@ -236,12 +236,10 @@ public:
 
     InstanceData* GetInstanceData_instance_sethekk_halls(Map* map)
     {
-        return new instance_sethekk_halls(map);
+        return new instance_sethekk_hallsAI(map);
     }
 
 };
-
-
 /*#####
 ## go_lakka_cage
 #####*/
