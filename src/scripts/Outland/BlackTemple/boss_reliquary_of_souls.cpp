@@ -101,26 +101,6 @@ static Position2d Coords[] =
     {450.4f, 168.3f}
 };
 
-
-
-
-
-
-
-
-
-
-
-void npc_enslaved_soulAI::JustDied(Unit* /*killer*/)
-{
-    if (ReliquaryGUID)
-        if (Creature* Reliquary = (Unit::GetCreature((*me), ReliquaryGUID)))
-            ++(CAST_AI(boss_reliquary_of_soulsAI, Reliquary->AI())->SoulDeathCount);
-
-    DoCast(me, SPELL_SOUL_RELEASE, true);
-}
-
-
 class boss_reliquary_of_souls : public CreatureScript
 {
 public: 
@@ -684,6 +664,15 @@ public:
         }
     
         void JustDied(Unit* killer);
+
+        void npc_enslaved_soulAI::JustDied(Unit* /*killer*/)
+        {
+            if (ReliquaryGUID)
+                if (Creature* Reliquary = (Unit::GetCreature((*me), ReliquaryGUID)))
+                    ++(CAST_AI(boss_reliquary_of_soulsAI, Reliquary->AI())->SoulDeathCount);
+
+            DoCast(me, SPELL_SOUL_RELEASE, true);
+        }
     };
 
     CreatureAI* GetAI_npc_enslaved_soul(Creature* pCreature)
