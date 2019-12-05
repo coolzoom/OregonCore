@@ -490,7 +490,7 @@ public:
     bool IsDatabaseBound() const { return true; }
 
     // Called when a dummy spell effect is triggered on the item.
-    virtual bool OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Item* target) { return false; }
+    virtual bool OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Item* target) { return false; }
 
     // Called when a player accepts a quest from the item.
     virtual bool OnQuestAccept(Player* player, Item* item, Quest const* quest) { return false; }
@@ -517,7 +517,7 @@ public:
     bool IsDatabaseBound() const { return true; }
 
     // Called when a dummy spell effect is triggered on the creature.
-    virtual bool OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Creature* target) { return false; }
+    virtual bool OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Creature* target) { return false; }
 
     // Called when a player opens a gossip dialog with the creature.
     virtual bool OnGossipHello(Player* player, Creature* creature) { return false; }
@@ -562,7 +562,7 @@ public:
     bool IsDatabaseBound() const { return true; }
 
     // Called when a dummy spell effect is triggered on the gameobject.
-    virtual bool OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, GameObject* target) { return false; }
+    virtual bool OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, GameObject* target) { return false; }
 
     // Called when a player opens a gossip dialog with the gameobject.
     virtual bool OnGossipHello(Player* player, GameObject* go) { return false; }
@@ -831,14 +831,14 @@ public: /* InstanceMapScript */
 
 public: /* ItemScript */
 
-    bool OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Item* target);
+    bool OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Item* target);
     bool OnQuestAccept(Player* player, Item* item, Quest const* quest);
     bool OnItemUse(Player* player, Item* item, SpellCastTargets const& targets);
 
 
 public: /* CreatureScript */
 
-    bool OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Creature* target);
+    bool OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Creature* target);
     bool OnGossipHello(Player* player, Creature* creature);
     bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action);
     bool OnGossipSelectCode(Player* player, Creature* creature, uint32 sender, uint32 action, const char* code);

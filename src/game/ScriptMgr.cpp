@@ -541,7 +541,7 @@ InstanceData* ScriptMgr::CreateInstanceData(InstanceMap* map)
     return tmpscript->OnGetInstanceData(map);
 }
 
-bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Item* target)
+bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Item* target)
 {
     ASSERT(caster);
     ASSERT(target);
@@ -570,7 +570,7 @@ bool ScriptMgr::OnItemUse(Player* player, Item* item, SpellCastTargets const& ta
     return tmpscript->OnUse(player, item, targets);
 }
 
-bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, Creature* target)
+bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Creature* target)
 {
     ASSERT(caster);
     ASSERT(target);
