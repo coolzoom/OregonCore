@@ -20,6 +20,8 @@
 #include "Weather.h"
 #include "AuctionHouseMgr.h"
 #include "ConditionMgr.h"
+#include "Player.h"
+#include "Transports.h"
 
 class Player;
 class Creature;
@@ -28,6 +30,7 @@ class InstanceData;
 class SpellScript;
 class Quest;
 class Item;
+class Transport;
 class GameObject;
 class SpellCastTargets;
 class Map;
@@ -476,7 +479,9 @@ class ItemScript : public ScriptObject
 {
 protected:
 
-    ItemScript(const char* name);
+    ItemScript(const char* name) 
+        : ScriptObject(name)
+    { }
 
     void RegisterSelf();
 
@@ -749,6 +754,9 @@ public:
 
     // Called when a player exits the transport.
     virtual void OnRemovePassenger(Transport* transport, Player* player) { }
+
+    // Called when a transport moves.
+    virtual void OnRelocate(Transport* transport, uint32 waypointId, uint32 mapId, float x, float y, float z) { }
 };
 
 // Placed here due to ScriptRegistry::AddScript dependency.
@@ -926,6 +934,14 @@ public: /* PlayerScript */
     void OnQuestObjectiveProgress(Player* player, Quest const* quest, uint32 objectiveIndex, uint16 progress);
     void OnQuestStatusChange(Player* player, uint32 questId);
     void OnPlayerRepop(Player* player);
+
+public: /* TransportScript */
+
+    void OnAddPassenger(Transport* transport, Player* player);
+    void OnAddCreaturePassenger(Transport* transport, Creature* creature);
+    void OnRemovePassenger(Transport* transport, Player* player);
+    void OnTransportUpdate(Transport* transport, uint32 diff);
+    void OnRelocate(Transport* transport, uint32 waypointId, uint32 mapId, float x, float y, float z);
 
 public: /* ScriptRegistry */
 
