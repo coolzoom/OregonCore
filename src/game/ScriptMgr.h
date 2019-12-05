@@ -604,7 +604,7 @@ public:
     bool IsDatabaseBound() const { return true; }
 
     // Called when the area trigger is activated by a player.
-    bool OnTrigger(Player* player, AreaTriggerEntry const* trigger) { return false; }
+    virtual bool OnTrigger(Player* player, AreaTriggerEntry const* trigger) { return false; }
 };
 
 class BattlegroundScript : public ScriptObject
