@@ -315,6 +315,190 @@ public:
 };
 
 
+class npc_marshal_reginald_windsor : public CreatureScript
+{
+public:
+    npc_marshal_reginald_windsor() : CreatureScript("npc_marshal_reginald_windsor") { }
+    struct npc_marshal_reginald_windsorAI : public npc_escortAI
+    {
+        npc_marshal_reginald_windsorAI(Creature* creature) : npc_escortAI(creature)
+        {
+            pInstance = (ScriptedInstance*)creature->GetInstanceData();
+        }
+
+        ScriptedInstance* pInstance;
+        uint64 PlayerGUID;
+        bool crest;
+
+        void Reset()
+        {
+            PlayerGUID = 0;
+            crest = false;
+        }
+
+        void EnterCombat(Unit* /*who*/)
+        {
+            switch (urand(0, 2))
+            {
+            case 0: me->Say(SAY_WINDSOR_AGGRO1, LANG_UNIVERSAL, 0); break;
+            case 1: me->Say(SAY_WINDSOR_AGGRO2, LANG_UNIVERSAL, 0); break;
+            case 2: me->Say(SAY_WINDSOR_AGGRO3, LANG_UNIVERSAL, PlayerGUID); break;
+            }
+        }
+
+        void JustDied(Unit* /*killer*/)
+        {
+            pInstance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_FAILED);
+        }
+
+        void MoveInLineOfSight(Unit* who)
+        {
+            if (HasEscortState(STATE_ESCORT_ESCORTING))
+                return;
+
+            if (who->GetTypeId() == TYPEID_PLAYER)
+            {
+                if (CAST_PLR(who)->GetQuestStatus(4322) == QUEST_STATUS_INCOMPLETE)
+                {
+                    float Radius = 10.0;
+                    if (me->IsWithinDistInMap(who, Radius))
+                    {
+                        SetEscortPaused(false);
+                        Start(true, false, who->GetGUID());
+
+                        PlayerGUID = who->GetGUID();
+                    }
+                }
+            }
+        }
+
+        void WaypointReached(uint32 waypointId)
+        {
+            Player* player = GetPlayerForEscort();
+            if (!player)
+                return;
+
+            switch (waypointId)
+            {
+            case 0:
+                me->SetFaction(11);
+                me->Say(SAY_REGINALD_WINDSOR_0_1, LANG_UNIVERSAL, PlayerGUID);
+                break;
+            case 1:
+                me->Say(SAY_REGINALD_WINDSOR_0_2, LANG_UNIVERSAL, 0);
+                break;
+            case 7:
+                me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                me->Say(SAY_REGINALD_WINDSOR_5_1, LANG_UNIVERSAL, 0);
+                SetEscortPaused(true);
+                break;
+            case 8:
+                me->Say(SAY_REGINALD_WINDSOR_5_2, LANG_UNIVERSAL, 0);
+                break;
+            case 11:
+                me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                me->Say(SAY_REGINALD_WINDSOR_7_1, LANG_UNIVERSAL, 0);
+                SetEscortPaused(true);
+                break;
+            case 12:
+                me->Say(SAY_REGINALD_WINDSOR_7_2, LANG_UNIVERSAL, 0);
+                break;
+            case 13:
+                me->Say(SAY_REGINALD_WINDSOR_7_3, LANG_UNIVERSAL, 0);
+                break;
+            case 20:
+                me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                me->Say(SAY_REGINALD_WINDSOR_13_1, LANG_UNIVERSAL, 0);
+                SetEscortPaused(true);
+                break;
+            case 21:
+                me->Say(SAY_REGINALD_WINDSOR_13_3, LANG_UNIVERSAL, 0);
+                break;
+            case 23:
+                me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                me->Say(SAY_REGINALD_WINDSOR_14_1, LANG_UNIVERSAL, 0);
+                SetEscortPaused(true);
+                break;
+            case 24:
+                me->Say(SAY_REGINALD_WINDSOR_14_2, LANG_UNIVERSAL, PlayerGUID);
+                break;
+            case 31:
+                me->Say(SAY_REGINALD_WINDSOR_20_1, LANG_UNIVERSAL, 0);
+                break;
+            case 32:
+                me->Say(SAY_REGINALD_WINDSOR_20_2, LANG_UNIVERSAL, 0);
+
+                if (Player* pPlayer = Unit::GetPlayer(*me, PlayerGUID))
+                    pPlayer->GroupEventHappens(QUEST_JAIL_BREAK, me);
+
+                pInstance->SetData(DATA_SHILL, ENCOUNTER_STATE_ENDED);
+                break;
+            }
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
+                return;
+
+            if (!crest)
+            {
+                if (me->FindNearestCreature(MOB_ENTRY_CREST_KILLER, 10.0f, true))
+                {
+                    me->Say(SAY_REGINALD_WINDSOR_13_2, LANG_UNIVERSAL, 0);
+                    crest = true;
+                }
+            }
+
+            npc_escortAI::UpdateAI(diff);
+        }
+    };
+
+    CreatureAI* GetAI_npc_marshal_reginald_windsor(Creature* pCreature)
+    {
+        npc_marshal_reginald_windsorAI* marshal_reginald_windsorAI = new npc_marshal_reginald_windsorAI(pCreature);
+
+        marshal_reginald_windsorAI->AddWaypoint(0, 403.61f, -52.71f, -63.92f, 4000);
+        marshal_reginald_windsorAI->AddWaypoint(1, 403.61f, -52.71f, -63.92f, 4000);
+        marshal_reginald_windsorAI->AddWaypoint(2, 406.33f, -54.87f, -63.95f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(3, 407.99f, -73.91f, -62.26f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(4, 557.03f, -119.71f, -61.83f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(5, 573.40f, -124.39f, -65.07f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(6, 593.91f, -130.29f, -69.25f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(7, 593.21f, -132.16f, -69.25f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(8, 593.21f, -132.16f, -69.25f, 3000);
+        marshal_reginald_windsorAI->AddWaypoint(9, 622.81f, -135.55f, -71.92f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(10, 634.68f, -151.29f, -70.32f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(11, 635.06f, -153.25f, -70.32f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(12, 635.06f, -153.25f, -70.32f, 3000);
+        marshal_reginald_windsorAI->AddWaypoint(13, 635.06f, -153.25f, -70.32f, 1500);
+        marshal_reginald_windsorAI->AddWaypoint(14, 655.25f, -172.39f, -73.72f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(15, 654.79f, -226.30f, -83.06f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(16, 622.85f, -268.85f, -83.96f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(17, 579.45f, -275.56f, -80.44f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(18, 561.19f, -266.85f, -75.59f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(19, 547.91f, -253.92f, -70.34f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(20, 549.20f, -252.40f, -70.34f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(21, 549.20f, -252.40f, -70.34f, 4000);
+        marshal_reginald_windsorAI->AddWaypoint(22, 555.33f, -269.16f, -74.40f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(23, 554.31f, -270.88f, -74.40f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(24, 554.31f, -270.88f, -74.40f, 4000);
+        marshal_reginald_windsorAI->AddWaypoint(25, 536.10f, -249.60f, -67.47f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(26, 520.94f, -216.65f, -59.28f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(27, 505.99f, -148.74f, -62.17f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(28, 484.21f, -56.24f, -62.43f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(29, 470.39f, -6.01f, -70.10f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(30, 451.27f, 30.85f, -70.07f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(31, 452.45f, 29.85f, -70.37f, 1500);
+        marshal_reginald_windsorAI->AddWaypoint(32, 452.45f, 29.85f, -70.37f, 7000);
+        marshal_reginald_windsorAI->AddWaypoint(33, 452.45f, 29.85f, -70.37f, 10000);
+        marshal_reginald_windsorAI->AddWaypoint(34, 451.27f, 31.85f, -70.07f, 0);
+
+        return marshal_reginald_windsorAI;
+    }
+
+};
+
 class npc_grimstone : public CreatureScript
 {
 public:
@@ -735,6 +919,166 @@ public:
     }
 };
 
+class npc_marshal_windsor : public CreatureScript
+{
+public:
+    npc_marshal_windsor() : CreatureScript("npc_marshal_windsor") { }
+
+    struct npc_marshal_windsorAI : public npc_escortAI
+    {
+        npc_marshal_windsorAI(Creature* creature) : npc_escortAI(creature)
+        {
+            pInstance = (ScriptedInstance*)creature->GetInstanceData();
+        }
+
+        ScriptedInstance* pInstance;
+        uint64 PlayerGUID;
+
+        void Reset()
+        {
+            PlayerGUID = 0;
+        }
+
+        void EnterCombat(Unit* who)
+        {
+            switch (urand(0, 2))
+            {
+            case 0: me->Say(SAY_WINDSOR_AGGRO1, LANG_UNIVERSAL, 0); break;
+            case 1: me->Say(SAY_WINDSOR_AGGRO2, LANG_UNIVERSAL, 0); break;
+            case 2: me->Say(SAY_WINDSOR_AGGRO3, LANG_UNIVERSAL, PlayerGUID); break;
+            }
+        }
+
+        void JustDied(Unit* /*killer*/)
+        {
+            pInstance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_FAILED);
+        }
+
+        void WaypointReached(uint32 waypointId)
+        {
+            Player* player = GetPlayerForEscort();
+            if (!player)
+                return;
+
+            switch (waypointId)
+            {
+            case 1:
+                me->Say(SAY_WINDSOR_1, LANG_UNIVERSAL, 0);
+                break;
+            case 7:
+                me->HandleEmoteCommand(EMOTE_STATE_POINT);
+                me->Say(SAY_WINDSOR_4_1, LANG_UNIVERSAL, PlayerGUID);
+                SetEscortPaused(true);
+                break;
+            case 10:
+                me->SetFaction(534);
+                break;
+            case 12:
+                me->Say(SAY_WINDSOR_6, LANG_UNIVERSAL, PlayerGUID);
+                pInstance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_IN_PROGRESS);
+                break;
+            case 13:
+                me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
+                break;
+            case 14:
+                pInstance->SetData(DATA_GATE_SR, 0);
+                me->SetFaction(11);
+                break;
+            case 16:
+                me->Say(SAY_WINDSOR_9, LANG_UNIVERSAL, 0);
+                break;
+            case 17:
+                me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
+                break;
+            case 18:
+                pInstance->SetData(DATA_GATE_SC, 0);
+                break;
+            case 19:
+                me->SetVisible(false);
+                me->SummonCreature(MOB_ENTRY_REGINALD_WINDSOR, 403.61f, -51.71f, -63.92f, 3.600434f, TEMPSUMMON_DEAD_DESPAWN, 0);
+                pInstance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_ENDED);
+                break;
+            }
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+            if (pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
+                return;
+
+            if (pInstance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_OBJECTIVE_COMPLETED)
+                SetEscortPaused(false);
+
+            if (!pInstance->GetData(DATA_GATE_D) && pInstance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_NOT_STARTED)
+            {
+                me->Say(SAY_WINDSOR_4_2, LANG_UNIVERSAL, 0);
+                pInstance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_BEFORE_START);
+            }
+            if (pInstance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_OBJECTIVE_COMPLETED)
+            {
+                me->Say(SAY_WINDSOR_4_3, LANG_UNIVERSAL, PlayerGUID);
+                pInstance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_ENDED);
+            }
+            if ((pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_IN_PROGRESS || pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_FAILED || pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_ENDED) && pInstance->GetData(DATA_SUPPLY_ROOM) == ENCOUNTER_STATE_ENDED)
+            {
+                me->SetVisible(false);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            }
+            else
+            {
+                me->SetVisible(true);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+            }
+            npc_escortAI::UpdateAI(diff);
+        }
+    };
+
+    CreatureAI* GetAI_npc_marshal_windsor(Creature* pCreature)
+    {
+        npc_marshal_windsorAI* marshal_windsorAI = new npc_marshal_windsorAI(pCreature);
+
+        marshal_windsorAI->AddWaypoint(0, 316.336f, -225.528f, -77.7258f, 3000);
+        marshal_windsorAI->AddWaypoint(1, 316.336f, -225.528f, -77.7258f, 2000);
+        marshal_windsorAI->AddWaypoint(2, 322.96f, -207.13f, -77.87f, 0);
+        marshal_windsorAI->AddWaypoint(3, 281.05f, -172.16f, -75.12f, 0);
+        marshal_windsorAI->AddWaypoint(4, 272.19f, -139.14f, -70.61f, 0);
+        marshal_windsorAI->AddWaypoint(5, 283.62f, -116.09f, -70.21f, 0);
+        marshal_windsorAI->AddWaypoint(6, 296.18f, -94.30f, -74.08f, 0);
+        marshal_windsorAI->AddWaypoint(7, 294.57f, -93.11f, -74.08f, 0);
+        marshal_windsorAI->AddWaypoint(8, 314.31f, -74.31f, -76.09f, 0);
+        marshal_windsorAI->AddWaypoint(9, 360.22f, -62.93f, -66.77f, 0);
+        marshal_windsorAI->AddWaypoint(10, 383.38f, -69.40f, -63.25f, 0);
+        marshal_windsorAI->AddWaypoint(11, 389.99f, -67.86f, -62.57f, 0);
+        marshal_windsorAI->AddWaypoint(12, 400.98f, -72.01f, -62.31f, 0);
+        marshal_windsorAI->AddWaypoint(13, 404.22f, -62.30f, -63.50f, 2300);
+        marshal_windsorAI->AddWaypoint(14, 404.22f, -62.30f, -63.50f, 1500);
+        marshal_windsorAI->AddWaypoint(15, 407.65f, -51.86f, -63.96f, 0);
+        marshal_windsorAI->AddWaypoint(16, 403.61f, -51.71f, -63.92f, 1000);
+        marshal_windsorAI->AddWaypoint(17, 403.61f, -51.71f, -63.92f, 2000);
+        marshal_windsorAI->AddWaypoint(18, 403.61f, -51.71f, -63.92f, 1000);
+        marshal_windsorAI->AddWaypoint(19, 403.61f, -51.71f, -63.92f, 0);
+
+        return marshal_windsorAI;
+    }
+
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
+    {
+        if (quest->GetQuestId() == 4322)
+        {
+            CAST_AI(npc_marshal_windsorAI, creature->AI())->PlayerGUID = player->GetGUID();
+
+            if (npc_escortAI* pEscortAI = CAST_AI(npc_marshal_windsorAI, creature->AI()))
+                pEscortAI->Start(true, true, player->GetGUID());
+
+            creature->SetFaction(11);
+        }
+
+        return true;
+    }
+};
+
 class npc_dughal_stormwing : public CreatureScript
 {
 public:
@@ -962,349 +1306,8 @@ public:
 
 };
 
-class npc_marshal_windsor : public CreatureScript
-{
-public:
-    npc_marshal_windsor() : CreatureScript("npc_marshal_windsor") { }
 
-    struct npc_marshal_windsorAI : public npc_escortAI
-    {
-        npc_marshal_windsorAI(Creature* creature) : npc_escortAI(creature)
-        {
-            pInstance = (ScriptedInstance*)creature->GetInstanceData();
-        }
 
-        ScriptedInstance* pInstance;
-        uint64 PlayerGUID;
-
-        void Reset()
-        {
-            PlayerGUID = 0;
-        }
-
-        void EnterCombat(Unit* who)
-        {
-            switch (urand(0, 2))
-            {
-            case 0: me->Say(SAY_WINDSOR_AGGRO1, LANG_UNIVERSAL, 0); break;
-            case 1: me->Say(SAY_WINDSOR_AGGRO2, LANG_UNIVERSAL, 0); break;
-            case 2: me->Say(SAY_WINDSOR_AGGRO3, LANG_UNIVERSAL, PlayerGUID); break;
-            }
-        }
-
-        void JustDied(Unit* /*killer*/)
-        {
-            pInstance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_FAILED);
-        }
-
-        void WaypointReached(uint32 waypointId)
-        {
-            Player* player = GetPlayerForEscort();
-            if (!player)
-                return;
-
-            switch (waypointId)
-            {
-            case 1:
-                me->Say(SAY_WINDSOR_1, LANG_UNIVERSAL, 0);
-                break;
-            case 7:
-                me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                me->Say(SAY_WINDSOR_4_1, LANG_UNIVERSAL, PlayerGUID);
-                SetEscortPaused(true);
-                break;
-            case 10:
-                me->SetFaction(534);
-                break;
-            case 12:
-                me->Say(SAY_WINDSOR_6, LANG_UNIVERSAL, PlayerGUID);
-                pInstance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_IN_PROGRESS);
-                break;
-            case 13:
-                me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
-                break;
-            case 14:
-                pInstance->SetData(DATA_GATE_SR, 0);
-                me->SetFaction(11);
-                break;
-            case 16:
-                me->Say(SAY_WINDSOR_9, LANG_UNIVERSAL, 0);
-                break;
-            case 17:
-                me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
-                break;
-            case 18:
-                pInstance->SetData(DATA_GATE_SC, 0);
-                break;
-            case 19:
-                me->SetVisible(false);
-                me->SummonCreature(MOB_ENTRY_REGINALD_WINDSOR, 403.61f, -51.71f, -63.92f, 3.600434f, TEMPSUMMON_DEAD_DESPAWN, 0);
-                pInstance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_ENDED);
-                break;
-            }
-        }
-
-        void UpdateAI(const uint32 diff)
-        {
-            if (pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
-                return;
-
-            if (pInstance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_OBJECTIVE_COMPLETED)
-                SetEscortPaused(false);
-
-            if (!pInstance->GetData(DATA_GATE_D) && pInstance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_NOT_STARTED)
-            {
-                me->Say(SAY_WINDSOR_4_2, LANG_UNIVERSAL, 0);
-                pInstance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_BEFORE_START);
-            }
-            if (pInstance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_OBJECTIVE_COMPLETED)
-            {
-                me->Say(SAY_WINDSOR_4_3, LANG_UNIVERSAL, PlayerGUID);
-                pInstance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_ENDED);
-            }
-            if ((pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_IN_PROGRESS || pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_FAILED || pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_ENDED) && pInstance->GetData(DATA_SUPPLY_ROOM) == ENCOUNTER_STATE_ENDED)
-            {
-                me->SetVisible(false);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-            }
-            else
-            {
-                me->SetVisible(true);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-            }
-            npc_escortAI::UpdateAI(diff);
-        }
-    };
-
-    CreatureAI* GetAI_npc_marshal_windsor(Creature* pCreature)
-    {
-        npc_marshal_windsorAI* marshal_windsorAI = new npc_marshal_windsorAI(pCreature);
-
-        marshal_windsorAI->AddWaypoint(0, 316.336f, -225.528f, -77.7258f, 3000);
-        marshal_windsorAI->AddWaypoint(1, 316.336f, -225.528f, -77.7258f, 2000);
-        marshal_windsorAI->AddWaypoint(2, 322.96f, -207.13f, -77.87f, 0);
-        marshal_windsorAI->AddWaypoint(3, 281.05f, -172.16f, -75.12f, 0);
-        marshal_windsorAI->AddWaypoint(4, 272.19f, -139.14f, -70.61f, 0);
-        marshal_windsorAI->AddWaypoint(5, 283.62f, -116.09f, -70.21f, 0);
-        marshal_windsorAI->AddWaypoint(6, 296.18f, -94.30f, -74.08f, 0);
-        marshal_windsorAI->AddWaypoint(7, 294.57f, -93.11f, -74.08f, 0);
-        marshal_windsorAI->AddWaypoint(8, 314.31f, -74.31f, -76.09f, 0);
-        marshal_windsorAI->AddWaypoint(9, 360.22f, -62.93f, -66.77f, 0);
-        marshal_windsorAI->AddWaypoint(10, 383.38f, -69.40f, -63.25f, 0);
-        marshal_windsorAI->AddWaypoint(11, 389.99f, -67.86f, -62.57f, 0);
-        marshal_windsorAI->AddWaypoint(12, 400.98f, -72.01f, -62.31f, 0);
-        marshal_windsorAI->AddWaypoint(13, 404.22f, -62.30f, -63.50f, 2300);
-        marshal_windsorAI->AddWaypoint(14, 404.22f, -62.30f, -63.50f, 1500);
-        marshal_windsorAI->AddWaypoint(15, 407.65f, -51.86f, -63.96f, 0);
-        marshal_windsorAI->AddWaypoint(16, 403.61f, -51.71f, -63.92f, 1000);
-        marshal_windsorAI->AddWaypoint(17, 403.61f, -51.71f, -63.92f, 2000);
-        marshal_windsorAI->AddWaypoint(18, 403.61f, -51.71f, -63.92f, 1000);
-        marshal_windsorAI->AddWaypoint(19, 403.61f, -51.71f, -63.92f, 0);
-
-        return marshal_windsorAI;
-    }
-
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
-    {
-        if (quest->GetQuestId() == 4322)
-        {
-            CAST_AI(npc_marshal_windsorAI, creature->AI())->PlayerGUID = player->GetGUID();
-
-            if (npc_escortAI* pEscortAI = CAST_AI(npc_marshal_windsorAI, creature->AI()))
-                pEscortAI->Start(true, true, player->GetGUID());
-
-            creature->SetFaction(11);
-        }
-
-        return true;
-    }
-};
-
-class npc_marshal_reginald_windsor : public CreatureScript
-{
-public:
-    npc_marshal_reginald_windsor() : CreatureScript("npc_marshal_reginald_windsor") { }
-    struct npc_marshal_reginald_windsorAI : public npc_escortAI
-    {
-        npc_marshal_reginald_windsorAI(Creature* creature) : npc_escortAI(creature)
-        {
-            pInstance = (ScriptedInstance*)creature->GetInstanceData();
-        }
-
-        ScriptedInstance* pInstance;
-        uint64 PlayerGUID;
-        bool crest;
-
-        void Reset()
-        {
-            PlayerGUID = 0;
-            crest = false;
-        }
-
-        void EnterCombat(Unit* /*who*/)
-        {
-            switch (urand(0, 2))
-            {
-            case 0: me->Say(SAY_WINDSOR_AGGRO1, LANG_UNIVERSAL, 0); break;
-            case 1: me->Say(SAY_WINDSOR_AGGRO2, LANG_UNIVERSAL, 0); break;
-            case 2: me->Say(SAY_WINDSOR_AGGRO3, LANG_UNIVERSAL, PlayerGUID); break;
-            }
-        }
-
-        void JustDied(Unit* /*killer*/)
-        {
-            pInstance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_FAILED);
-        }
-
-        void MoveInLineOfSight(Unit* who)
-        {
-            if (HasEscortState(STATE_ESCORT_ESCORTING))
-                return;
-
-            if (who->GetTypeId() == TYPEID_PLAYER)
-            {
-                if (CAST_PLR(who)->GetQuestStatus(4322) == QUEST_STATUS_INCOMPLETE)
-                {
-                    float Radius = 10.0;
-                    if (me->IsWithinDistInMap(who, Radius))
-                    {
-                        SetEscortPaused(false);
-                        Start(true, false, who->GetGUID());
-
-                        PlayerGUID = who->GetGUID();
-                    }
-                }
-            }
-        }
-
-        void WaypointReached(uint32 waypointId)
-        {
-            Player* player = GetPlayerForEscort();
-            if (!player)
-                return;
-
-            switch (waypointId)
-            {
-            case 0:
-                me->SetFaction(11);
-                me->Say(SAY_REGINALD_WINDSOR_0_1, LANG_UNIVERSAL, PlayerGUID);
-                break;
-            case 1:
-                me->Say(SAY_REGINALD_WINDSOR_0_2, LANG_UNIVERSAL, 0);
-                break;
-            case 7:
-                me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                me->Say(SAY_REGINALD_WINDSOR_5_1, LANG_UNIVERSAL, 0);
-                SetEscortPaused(true);
-                break;
-            case 8:
-                me->Say(SAY_REGINALD_WINDSOR_5_2, LANG_UNIVERSAL, 0);
-                break;
-            case 11:
-                me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                me->Say(SAY_REGINALD_WINDSOR_7_1, LANG_UNIVERSAL, 0);
-                SetEscortPaused(true);
-                break;
-            case 12:
-                me->Say(SAY_REGINALD_WINDSOR_7_2, LANG_UNIVERSAL, 0);
-                break;
-            case 13:
-                me->Say(SAY_REGINALD_WINDSOR_7_3, LANG_UNIVERSAL, 0);
-                break;
-            case 20:
-                me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                me->Say(SAY_REGINALD_WINDSOR_13_1, LANG_UNIVERSAL, 0);
-                SetEscortPaused(true);
-                break;
-            case 21:
-                me->Say(SAY_REGINALD_WINDSOR_13_3, LANG_UNIVERSAL, 0);
-                break;
-            case 23:
-                me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                me->Say(SAY_REGINALD_WINDSOR_14_1, LANG_UNIVERSAL, 0);
-                SetEscortPaused(true);
-                break;
-            case 24:
-                me->Say(SAY_REGINALD_WINDSOR_14_2, LANG_UNIVERSAL, PlayerGUID);
-                break;
-            case 31:
-                me->Say(SAY_REGINALD_WINDSOR_20_1, LANG_UNIVERSAL, 0);
-                break;
-            case 32:
-                me->Say(SAY_REGINALD_WINDSOR_20_2, LANG_UNIVERSAL, 0);
-
-                if (Player* pPlayer = Unit::GetPlayer(*me, PlayerGUID))
-                    pPlayer->GroupEventHappens(QUEST_JAIL_BREAK, me);
-
-                pInstance->SetData(DATA_SHILL, ENCOUNTER_STATE_ENDED);
-                break;
-            }
-        }
-
-        void UpdateAI(const uint32 diff)
-        {
-            if (pInstance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
-                return;
-
-            if (!crest)
-            {
-                if (me->FindNearestCreature(MOB_ENTRY_CREST_KILLER, 10.0f, true))
-                {
-                    me->Say(SAY_REGINALD_WINDSOR_13_2, LANG_UNIVERSAL, 0);
-                    crest = true;
-                }
-            }
-
-            npc_escortAI::UpdateAI(diff);
-        }
-    };
-
-    CreatureAI* GetAI_npc_marshal_reginald_windsor(Creature* pCreature)
-    {
-        npc_marshal_reginald_windsorAI* marshal_reginald_windsorAI = new npc_marshal_reginald_windsorAI(pCreature);
-
-        marshal_reginald_windsorAI->AddWaypoint(0, 403.61f, -52.71f, -63.92f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(1, 403.61f, -52.71f, -63.92f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(2, 406.33f, -54.87f, -63.95f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(3, 407.99f, -73.91f, -62.26f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(4, 557.03f, -119.71f, -61.83f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(5, 573.40f, -124.39f, -65.07f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(6, 593.91f, -130.29f, -69.25f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(7, 593.21f, -132.16f, -69.25f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(8, 593.21f, -132.16f, -69.25f, 3000);
-        marshal_reginald_windsorAI->AddWaypoint(9, 622.81f, -135.55f, -71.92f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(10, 634.68f, -151.29f, -70.32f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(11, 635.06f, -153.25f, -70.32f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(12, 635.06f, -153.25f, -70.32f, 3000);
-        marshal_reginald_windsorAI->AddWaypoint(13, 635.06f, -153.25f, -70.32f, 1500);
-        marshal_reginald_windsorAI->AddWaypoint(14, 655.25f, -172.39f, -73.72f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(15, 654.79f, -226.30f, -83.06f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(16, 622.85f, -268.85f, -83.96f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(17, 579.45f, -275.56f, -80.44f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(18, 561.19f, -266.85f, -75.59f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(19, 547.91f, -253.92f, -70.34f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(20, 549.20f, -252.40f, -70.34f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(21, 549.20f, -252.40f, -70.34f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(22, 555.33f, -269.16f, -74.40f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(23, 554.31f, -270.88f, -74.40f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(24, 554.31f, -270.88f, -74.40f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(25, 536.10f, -249.60f, -67.47f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(26, 520.94f, -216.65f, -59.28f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(27, 505.99f, -148.74f, -62.17f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(28, 484.21f, -56.24f, -62.43f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(29, 470.39f, -6.01f, -70.10f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(30, 451.27f, 30.85f, -70.07f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(31, 452.45f, 29.85f, -70.37f, 1500);
-        marshal_reginald_windsorAI->AddWaypoint(32, 452.45f, 29.85f, -70.37f, 7000);
-        marshal_reginald_windsorAI->AddWaypoint(33, 452.45f, 29.85f, -70.37f, 10000);
-        marshal_reginald_windsorAI->AddWaypoint(34, 451.27f, 31.85f, -70.07f, 0);
-
-        return marshal_reginald_windsorAI;
-    }
-
-};
 
 class npc_crest : public CreatureScript
 {

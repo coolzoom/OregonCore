@@ -48,9 +48,6 @@ EndScriptData */
 //Attumen (@todo Use the summoning spell instead of creature id. It works , but is not convenient for us)
 #define SUMMON_ATTUMEN 15550
 
-class boss_attumen;
-class boss_attumen::boss_attumenAI;
-
 class boss_midnight : public CreatureScript
 {
 public:
