@@ -114,6 +114,25 @@ class ChatHandler
         bool HandleGMListIngameCommand(const char* args);
         bool HandleGMListFullCommand(const char* args);
 
+		// Spectator stop command
+		bool HandleSpectatorStopCommand(const char* args);
+
+		// VIP system
+		bool HandleVipCommand(const char* args);
+		bool HandleVipAddCommand(const char* args);
+		bool HandleVipDeleteCommand(const char* args);
+
+		// Referrals system
+		bool HandleReferralAddCommand(const char* args);
+		bool HandleReferralInfoCommand(const char* args);
+		bool HandleReferralDeleteCommand(const char* args);
+		bool HandleReferralPresentFirstCommand(const char* args);
+		bool HandleReferralPresentSecondCommand(const char* args);
+		bool HandleReferralPresentThirdCommand(const char* args);
+
+		// Bonus for played time
+		bool HandleBfptCommand(const char* args);
+
         bool HandleNamegoCommand(const char* args);
         bool HandleGonameCommand(const char* args);
         bool HandleGroupgoCommand(const char* args);
@@ -390,6 +409,7 @@ class ChatHandler
         bool HandleAnimCommand(const char* args);
         bool HandleStandStateCommand(const char* args);
         bool HandleDieCommand(const char* args);
+		bool HandleKillCommand(const char* args);
         bool HandleDamageCommand(const char *args);
         bool HandleReviveCommand(const char* args);
         bool HandleMorphCommand(const char* args);

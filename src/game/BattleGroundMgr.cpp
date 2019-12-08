@@ -174,6 +174,82 @@ void BattleGroundQueue::AddPlayer(Player *plr, GroupQueueInfo *ginfo)
     // add the pinfo to ginfo's list
     ginfo->Players[plr->GetGUID()]  = &info;
 
+	if (sWorld.getConfig(CONFIG_BATTLEGROUND_ALLOW_TWO_SIDE))
+	{
+		if (ginfo->ArenaType != 0)
+			ginfo->Team = plr->GetTeam();
+		else
+		{
+			uint32 rHorde = 0;
+			uint32 rAlliance = 0;
+			for (std::map<uint64, PlayerQueueInfo>::iterator itr = m_QueuedPlayers[queue_id].begin(); itr != m_QueuedPlayers[queue_id].end(); ++itr)
+			{
+				Player *qPlayer = objmgr.GetPlayer((uint64)itr->first);
+				if (qPlayer)
+				{
+					if (itr->second.GroupInfo->Team == ALLIANCE)
+					{
+						rAlliance++;
+						//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Alliance +1");
+					}
+					else if (itr->second.GroupInfo->Team == HORDE)
+					{
+						rHorde++;
+						//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Horde +1");
+					}
+					//else
+						//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "No Queues Found!");
+				}
+			}
+			uint32 plrT = plr->GetTeam();
+			uint32 plrA = 0;
+			uint32 plrH = 0;
+			if (plrT)
+			{
+				if (plrT == ALLIANCE)
+				{
+					plrA++;
+					//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Alliance -1");
+				}
+				else
+				{
+					plrH++;
+					//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Horde -1");
+				}
+			}
+			rAlliance -= plrA;
+			rHorde -= plrH;
+			if (rAlliance > rHorde)
+			{
+				//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Alliance > Horde. Send to Horde!");
+				ginfo->Team = HORDE;
+			}
+			else if (rHorde > rAlliance)
+			{
+				//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Horde > Alliance. Send to Alliance!");
+				ginfo->Team = ALLIANCE;
+			}
+			else
+			{
+				//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Horde = Alliance");
+				uint32 sider;
+				sider = urand(1, 2);
+				if (sider == 1)
+				{
+					//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Random send to Alliance!");
+					ginfo->Team = ALLIANCE;
+				}
+				else if (sider = 2)
+				{
+					//sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "Random send to Horde!");
+					ginfo->Team = HORDE;
+				}
+				else
+					ginfo->Team = plr->GetTeam();
+			}
+		}
+	}
+
     if (sWorld.getConfig(CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_ENABLE))
     {
         //announce only once in a time
@@ -201,7 +277,7 @@ void BattleGroundQueue::AddPlayer(Player *plr, GroupQueueInfo *ginfo)
             Player *_player = objmgr.GetPlayer((uint64)itr->first);
             if (_player)
             {
-                if (_player->GetTeam() == ALLIANCE)
+                if (_player->GetBGTeam() == ALLIANCE)
                     qAlliance++;
                 else
                     qHorde++;
@@ -614,8 +690,16 @@ void BattleGroundQueue::Update(uint32 bgTypeId, uint32 queue_id, uint8 arenatype
                 MinPlayersPerTeam = 3;
                 break;
             case ARENA_TYPE_5v5:
-                MaxPlayersPerTeam = 5;
-                MinPlayersPerTeam = 5;
+				if (sWorld.getConfig(CONFIG_ARENA_SINGLE))
+				{
+					MaxPlayersPerTeam = 1;
+					MinPlayersPerTeam = 1;
+				}
+				else
+				{
+					MaxPlayersPerTeam = 5;
+					MinPlayersPerTeam = 5;
+				}
                 break;
             }
         }
@@ -1651,12 +1735,30 @@ void BattleGroundMgr::DistributeArenaPoints()
     //cycle that gives points to all players
     for (std::map<uint32, uint32>::iterator plr_itr = PlayerPoints.begin(); plr_itr != PlayerPoints.end(); ++plr_itr)
     {
-        //update to database
-        CharacterDatabase.PExecute("UPDATE characters SET arenaPoints = arenaPoints + '%u' WHERE guid = '%u'", plr_itr->second, plr_itr->first);
+		uint32 vippoints = ((plr_itr->second)*sWorld.getConfig(VIP_RATE_ARENA_POINTS));
+		uint32 playerpoints = ((plr_itr->second)*sWorld.getConfig(RATE_ARENA_POINTS));
         //add points if player is online
-        Player* pl = objmgr.GetPlayer(plr_itr->first);
-        if (pl)
-            pl->ModifyArenaPoints(plr_itr->second);
+        if (Player* player = HashMapHolder<Player>::Find(plr_itr->first))
+		{
+			uint32 points;
+			if (player->isVip())
+			{
+				points = vippoints;
+			}
+			else
+			{
+				points = playerpoints;
+			}
+            player->ModifyArenaPoints(points, true);
+		}
+		else
+		{
+			QueryResult_AutoPtr vip = CharacterDatabase.PQuery("SELECT `guid` FROM `vip` WHERE `guid` = '%u'",plr_itr->first);
+			if (vip)
+				CharacterDatabase.PExecute("UPDATE characters SET arenaPoints = arenaPoints + '%u' WHERE guid = '%u'", vippoints, plr_itr->first);
+			else
+				CharacterDatabase.PExecute("UPDATE characters SET arenaPoints = arenaPoints + '%u' WHERE guid = '%u'", playerpoints, plr_itr->first);
+		}
     }
 
     PlayerPoints.clear();
@@ -1862,3 +1964,12 @@ void BattleGroundMgr::SetHolidayWeekends(uint32 mask)
     }
 }
 
+uint32 BattleGroundMgr::GetArenaEndAfterTime() const
+{
+    return sWorld.getConfig(CONFIG_ARENA_END_AFTER_TIME);
+}
+
+bool BattleGroundMgr::IsArenaEndAfterAlwaysDraw() const
+{
+    return sWorld.getConfig(CONFIG_ARENA_END_AFTER_ALWAYS_DRAW);
+}

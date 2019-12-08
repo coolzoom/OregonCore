@@ -17,6 +17,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AnticheatMgr.h"
 #include "Common.h"
 #include "SharedDefines.h"
 #include "Database/DatabaseEnv.h"
@@ -200,7 +201,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectNULL,                                     //135 SPELL_EFFECT_CALL_PET
     &Spell::EffectHealPct,                                  //136 SPELL_EFFECT_HEAL_PCT
     &Spell::EffectEnergisePct,                              //137 SPELL_EFFECT_ENERGIZE_PCT
-    &Spell::EffectNULL,                                     //138 SPELL_EFFECT_138                      Leap
+    &Spell::EffectNULL,                                     //138 SPELL_EFFECT_LEAP_BACK                
     &Spell::EffectUnused,                                   //139 SPELL_EFFECT_CLEAR_QUEST              (misc - is quest ID), unused
     &Spell::EffectForceCast,                                //140 SPELL_EFFECT_FORCE_CAST
     &Spell::EffectNULL,                                     //141 SPELL_EFFECT_141                      damage and reduce speed?
@@ -208,10 +209,10 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectApplyAreaAura,                            //143 SPELL_EFFECT_APPLY_AREA_AURA_OWNER
     &Spell::EffectKnockBack,                                //144 SPELL_EFFECT_KNOCK_BACK_2             Spectral Blast
     &Spell::EffectPlayerPull,                               //145 SPELL_EFFECT_145                      Black Hole Effect
-    &Spell::EffectUnused,                                   //146 SPELL_EFFECT_146                      unused
+    &Spell::EffectUnused,                                   //146 SPELL_EFFECT_ACTIVATE_RUNE            unused
     &Spell::EffectQuestFail,                                //147 SPELL_EFFECT_QUEST_FAIL               quest fail
     &Spell::EffectUnused,                                   //148 SPELL_EFFECT_148                      unused
-    &Spell::EffectNULL,                                     //149 SPELL_EFFECT_149                      swoop
+    &Spell::EffectNULL,                                     //149 SPELL_EFFECT_CHARGE2                      swoop
     &Spell::EffectUnused,                                   //150 SPELL_EFFECT_150                      unused
     &Spell::EffectTriggerRitualOfSummoning,                 //151 SPELL_EFFECT_TRIGGER_SPELL_2
     &Spell::EffectNULL,                                     //152 SPELL_EFFECT_152                      summon Refer-a-Friend
@@ -1653,7 +1654,11 @@ void Spell::EffectDummy(uint32 i)
                     }
 
                     if (m_caster->IsFriendlyTo(unitTarget))
+					{
+						if (unitTarget->GetTypeId() == TYPEID_PLAYER && unitTarget->ToPlayer()->duel)
+							unitTarget = m_caster;
                         m_caster->CastSpell(unitTarget, heal, true, 0);
+					}
                     else
                         m_caster->CastSpell(unitTarget, hurt, true, 0);
 
@@ -1722,17 +1727,24 @@ void Spell::EffectDummy(uint32 i)
                     }
 
                     // not empty (checked)
-                    Unit::AttackerSet const& attackers = unitTarget->getAttackers();
+                    //Unit::AttackerSet const& attackers = unitTarget->getAttackers();
+					Unit::AttackerSet attackers(unitTarget->getAttackers());
 
                     // chance to be selected from list
-                    float chance = 100.0f/attackers.size();
+                    /*float chance = 100.0f/attackers.size();
                     uint32 count=0;
-                    for (Unit::AttackerSet::const_iterator aItr = attackers.begin(); aItr != attackers.end() && count < 3; ++aItr)
+                    for (Unit::AttackerSet::const_iterator aItr = attackers.begin(); aItr != attackers.end() && count < 3; ++aItr)*/
+					uint32 maxTargets = std::min<uint32>(3, attackers.size());
+                    for (uint32 i = 0; i < maxTargets; ++i)
                     {
-                        if (!roll_chance_f(chance))
+                        /*if (!roll_chance_f(chance))
                             continue;
                         ++count;
-                        AddUnitTarget((*aItr), 1);
+                        AddUnitTarget((*aItr), 1);*/
+						Unit::AttackerSet::const_iterator aItr = attackers.begin();
+                        std::advance(aItr, urand(0, attackers.size() - 1));
+                        AddUnitTarget(*aItr, 1);
+                        attackers.erase(*aItr);
                     }
 
                     // now let next effect cast spell at each target.
@@ -2452,7 +2464,17 @@ void Spell::EffectSendEvent(uint32 EffectIndex)
     }
     sLog.outDebug("Spell ScriptStart %u for spellid %u in EffectSendEvent ", m_spellInfo->EffectMiscValue[EffectIndex], m_spellInfo->Id);
 
-    m_caster->GetMap()->ScriptsStart(sEventScripts, m_spellInfo->EffectMiscValue[EffectIndex], m_caster, focusObject);
+    Object *pTarget;
+    if (focusObject)
+        pTarget = focusObject;
+    else if (unitTarget)
+        pTarget = unitTarget;
+    else if (gameObjTarget)
+        pTarget = gameObjTarget;
+    else
+        pTarget = NULL;
+
+    m_caster->GetMap()->ScriptsStart(sEventScripts, m_spellInfo->EffectMiscValue[EffectIndex], m_caster, pTarget);
 }
 
 void Spell::EffectPowerBurn(uint32 i)
@@ -2587,7 +2609,8 @@ void Spell::EffectHealPct(uint32 /*i*/)
             return;
 
         uint32 addhealth = unitTarget->GetMaxHealth() * damage / 100;
-        caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, false);
+
+		caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, false);
 
         int32 gain = unitTarget->ModifyHealth(int32(addhealth));
         unitTarget->getHostileRefManager().threatAssist(m_caster, float(gain) * 0.5f, m_spellInfo);
@@ -2643,10 +2666,7 @@ void Spell::EffectHealthLeech(uint32 i)
     {
         new_damage = m_caster->SpellHealingBonus(m_spellInfo, new_damage, HEAL, m_caster);
 
-        m_caster->ModifyHealth(new_damage);
-
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-            m_caster->SendHealSpellLog(m_caster, m_spellInfo->Id, uint32(new_damage));
+        m_caster->HealTargetUnit(m_caster, m_spellInfo, uint32(new_damage), false, true);
     }
 //    m_healthLeech+=tmpvalue;
 //    m_damage+=new_damage;
@@ -2942,7 +2962,7 @@ void Spell::SendLoot(uint64 guid, LootType loottype)
                     if (player->GetQuestStatus(gameObjTarget->GetGOInfo()->goober.questId) != QUEST_STATUS_INCOMPLETE)
                         return;
 
-                sScriptMgr.GOHello(player, gameObjTarget);
+                //sScriptMgr.GOHello(player, gameObjTarget);
                 player->GetMap()->ScriptsStart(sGameObjectScripts, gameObjTarget->GetDBTableGUIDLow(), player, gameObjTarget);
 
                 gameObjTarget->AddUniqueUse(player);
@@ -3313,6 +3333,9 @@ void Spell::EffectSummonType(uint32 i)
                     if (!summon || !summon->isTotem())
                         return;
 
+					summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
+
+
                     if (damage)                                            // if not spell info, DB values used
                     {
                         summon->SetMaxHealth(damage);
@@ -3382,6 +3405,7 @@ void Spell::EffectSummonType(uint32 i)
     if (summon)
     {
         summon->SetCreatorGUID(m_originalCaster->GetGUID());
+		summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
     }
 }
 
@@ -3435,7 +3459,7 @@ void Spell::EffectDispel(uint32 i)
                 if (!aur->IsPositive())
                     positive = false;
                 else
-                    positive = (aur->GetSpellProto()->AttributesEx & SPELL_ATTR_EX_NEGATIVE) == 0;
+                    positive = (aur->GetSpellProto()->AttributesEx & SPELL_ATTR_EX_CANT_BE_REFLECTED) == 0;
 
                 // do not remove positive auras if friendly target
                 //               negative auras if non-friendly target
@@ -3589,6 +3613,7 @@ void Spell::EffectDistract(uint32 /*i*/)
         unitTarget->SetOrientation(angle);
         unitTarget->StopMoving();
         unitTarget->GetMotionMaster()->MoveDistract(damage*IN_MILLISECONDS);
+		unitTarget->SendMovementFlagUpdate();
     }
 }
 
@@ -4288,8 +4313,8 @@ void Spell::SpellDamageWeaponDmg(uint32 i)
             // Seal of Command - receive benefit from Spell Damage and Healing
             if (m_spellInfo->SpellFamilyFlags & 0x00000002000000LL)
             {
-                spell_bonus += int32(0.20f*m_caster->SpellBaseDamageBonus(GetSpellSchoolMask(m_spellInfo)));
-                spell_bonus += int32(0.29f*m_caster->SpellBaseDamageBonusForVictim(GetSpellSchoolMask(m_spellInfo), unitTarget));
+                spell_bonus += int32(0.3f*m_caster->SpellBaseDamageBonus(GetSpellSchoolMask(m_spellInfo)));
+                spell_bonus += int32(0.4f*m_caster->SpellBaseDamageBonusForVictim(GetSpellSchoolMask(m_spellInfo), unitTarget));
             }
             break;
         }
@@ -4486,16 +4511,21 @@ void Spell::EffectInterruptCast(uint32 /*i*/)
         {
             SpellEntry const* curSpellInfo = spell->m_spellInfo;
             // check if we can interrupt spell
-            if ((spell->getState() == SPELL_STATE_CASTING
-                || spell->getState() == SPELL_STATE_PREPARING && spell->GetCastTime() > 0.0f)
-                && curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT && curSpellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
+            if (spell->getState() == SPELL_STATE_CASTING || (spell->getState() == SPELL_STATE_PREPARING && spell->GetCastTime() > 0.0f))
             {
-                if (m_originalCaster)
-                {
-                    int32 duration = m_originalCaster->CalculateSpellDuration(m_spellInfo, i, unitTarget);
-                    unitTarget->ProhibitSpellSchool(GetSpellSchoolMask(curSpellInfo), duration/*GetSpellDuration(m_spellInfo)*/);
+                if ((i == CURRENT_GENERIC_SPELL && curSpellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT) ||				    
+                   (i == CURRENT_CHANNELED_SPELL && curSpellInfo->ChannelInterruptFlags & CHANNEL_FLAG_MOVEMENT))
+                {   
+                    if (curSpellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
+                    {
+                        if (m_originalCaster)
+                        {
+                            int32 duration = m_originalCaster->CalculateSpellDuration(m_spellInfo, i, unitTarget);
+                            unitTarget->ProhibitSpellSchool(GetSpellSchoolMask(curSpellInfo), duration/*GetSpellDuration(m_spellInfo)*/);
+                        }
+                        unitTarget->InterruptSpell(CurrentSpellTypes(i), false);
+                    }
                 }
-                unitTarget->InterruptSpell(CurrentSpellTypes(i), false);
             }
         }
     }
@@ -6037,18 +6067,40 @@ void Spell::EffectSummonDeadPet(uint32 /*i*/)
 {
     if (m_caster->GetTypeId() != TYPEID_PLAYER)
         return;
+
     Player *_player = m_caster->ToPlayer();
     Pet *pet = _player->GetPet();
-    if (!pet)
-        return;
-    if (pet->isAlive())
-        return;
-    if (damage < 0)
+
+    // Only dead pets should be revived
+    if (pet && pet->isAlive())
         return;
 
-    float x,y,z;
-    _player->GetPosition(x, y, z);
-    _player->GetMap()->CreatureRelocation(pet, x, y, z, _player->GetOrientation());
+    // Don't revive the pet if it doesn't exist, or has been dismissed
+    if (!m_caster->ToPlayer()->doesOwnPet() || m_caster->ToPlayer()->isPetDismissed())
+        return;
+ 
+	float px, py, pz;
+
+	// If the pet was not found in the world we have to summon it,
+	// add it to the world and relocate for everything to work
+	if (!pet)
+	{
+        _player->GetClosePoint(px, py, pz, _player->GetObjectSize(), PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);   
+        _player->SummonPet(0, px, py, pz, _player->GetOrientation(), SUMMON_PET, 0);
+
+        // Make sure the pet has been summoned and exists in the world
+        if (Pet *currentPet = _player->GetPet())
+        {
+            pet = currentPet; pet->AddToWorld();
+            pet->Relocate(px, py, pz, _player->GetOrientation());
+        }
+        else return; // Something has gone wrong and the pet was not summoned
+	}
+    else
+    {
+        _player->GetPosition(px, py, pz);
+        _player->GetMap()->CreatureRelocation(pet, px, py, pz, _player->GetOrientation());
+    }
 
     pet->SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
     pet->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
@@ -6056,9 +6108,8 @@ void Spell::EffectSummonDeadPet(uint32 /*i*/)
     pet->clearUnitState(UNIT_STAT_ALL_STATE);
     pet->SetHealth(uint32(pet->GetMaxHealth()*(float(damage)/100)));
 
-    //pet->AIM_Initialize();
-    // _player->PetSpellInitialize(); -- action bar not removed at death and not required send at revive
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
+	pet->SendUpdateToPlayer(_player);
 }
 
 void Spell::EffectDestroyAllTotems(uint32 /*i*/)
@@ -6075,7 +6126,18 @@ void Spell::EffectDestroyAllTotems(uint32 /*i*/)
             uint32 spell_id = totem->GetUInt32Value(UNIT_CREATED_BY_SPELL);
             SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
             if (spellInfo)
-                mana += spellInfo->manaCost * damage / 100;
+                //mana += spellInfo->manaCost * damage / 100;
+	  	    {/* Так было на хаке. После фикса стало как ниже
+				float cost = spellInfo->manaCost;
+				if(spellInfo->ManaCostPercentage)
+					cost = spellInfo->ManaCostPercentage * m_caster->GetCreateMana() / 100;
+					mana += cost * 17 / 100.0f;*/
+				if (spellInfo->ManaCostPercentage)
+                    mana += spellInfo->ManaCostPercentage * (m_caster->GetCreateMana() / 100.f) * (damage / 100.f);
+                else
+                    mana += spellInfo->manaCost * (damage / 100.f);
+			}
+
             ((Totem*)totem)->UnSummon();
         }
     }

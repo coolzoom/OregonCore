@@ -453,6 +453,7 @@ struct _ItemStat
 {
     uint32  ItemStatType;
     int32   ItemStatValue;
+	//float	ItemStatValue;
 };
 struct _Spell
 {
@@ -563,6 +564,8 @@ struct ItemPrototype
         return false;
     }
 };
+
+typedef UNORDERED_MAP<uint32, uint32> ItemFakeEntryContainer; // custom
 
 struct ItemLocale
 {

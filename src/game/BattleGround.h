@@ -27,6 +27,7 @@
 #include "ObjectMgr.h"
 #include "BattleGroundMgr.h"
 #include "SharedDefines.h"
+#include "World.h"
 
 enum BattleGroundSounds
 {
@@ -52,13 +53,25 @@ enum BattleGroundMarks
     ITEM_AV_MARK_OF_HONOR           = 20560,
     ITEM_WS_MARK_OF_HONOR           = 20558,
     ITEM_AB_MARK_OF_HONOR           = 20559,
-    ITEM_EY_MARK_OF_HONOR           = 29024
+    ITEM_EY_MARK_OF_HONOR           = 29024/*,
+	ITEM_AV_MARK_OF_HONOR           = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_MARK),
+    ITEM_WS_MARK_OF_HONOR           = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_MARK),
+    ITEM_AB_MARK_OF_HONOR           = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_MARK),
+    ITEM_EY_MARK_OF_HONOR           = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_MARK)*/
 };
 
 enum BattleGroundMarksCount
 {
     ITEM_WINNER_COUNT               = 3,
-    ITEM_LOSER_COUNT                = 1
+    ITEM_LOSER_COUNT                = 1/*,
+	ITEM_AV_WINNER_COUNT               = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_WIN_COUNT),
+    ITEM_AV_LOSER_COUNT                = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_LOSE_COUNT),
+	ITEM_WS_WINNER_COUNT               = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_WIN_COUNT),
+    ITEM_WS_LOSER_COUNT                = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_LOSE_COUNT),
+	ITEM_AB_WINNER_COUNT               = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_WIN_COUNT),
+    ITEM_AB_LOSER_COUNT                = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_LOSE_COUNT),
+	ITEM_EY_WINNER_COUNT               = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_WIN_COUNT),
+    ITEM_EY_LOSER_COUNT                = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_LOSE_COUNT)*/
 };
 
 enum BattleGroundSpells
@@ -543,6 +556,7 @@ class BattleGround
         uint32 m_StartMessageIds[BG_STARTING_EVENT_COUNT];
 
         bool   m_BuffChange;
+		uint32 m_TimeElapsedSinceBeggining;
     uint32 m_score[2];                    //array that keeps general team scores, used to determine who gets most marks when bg ends prematurely
 
         BGHonorMode m_HonorMode;

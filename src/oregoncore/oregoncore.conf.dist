@@ -810,6 +810,13 @@ ChatLogTimestamp = 0
 #        Default: 0 - disable
 #                 1 - enable
 #
+#	Autorestart.Timer
+#		Автоматический рестарт сервера по таймеру. Работает при запуске через рестартер, в противном случаи выключает сервер (вместо рестарта).
+#		Default: 0 - disable
+#				 60 - рестарт через 60 секунд после запуска сервера
+#				 3600 - рестарт через 1 час после запуска сервера
+#				 86400 - рестарт через 24 часа после запуска
+#
 ###############################################################################
 
 GameType = 1
@@ -855,6 +862,7 @@ Event.Announce = 0
 BeepAtStart = 1
 Motd = "Welcome to an Oregon Core server."
 Server.LoginInfo = 0
+Autorestart.Timer = 0
 
 ###############################################################################
 # PLAYER INTERACTION
@@ -1201,9 +1209,9 @@ GM.TicketSystem.ChanceOfGMSurvey = 0
 #    Visibility.Distance.Instances
 #    Visibility.Distance.BGArenas
 #        Visibility distance for different ingame object in different maps.
-#        Visibility on continents on offy ~90 yards. In BG/Arenas ~180.
-#        For instances default ~120.
-#        Max limited by active player zone: ~ 333
+#        Visibility on continents on retail ~90 yards. In BG/Arenas ~533.
+#        For instances default ~170.
+#        Max limited by active player zone: ~ 533
 #        Min limit is max aggro radius (45) * Rate.Creature.Aggro
 #
 #    Visibility.Distance.Object
@@ -1231,8 +1239,8 @@ GM.TicketSystem.ChanceOfGMSurvey = 0
 
 Visibility.GroupMode = 1
 Visibility.Distance.Continents = 90
-Visibility.Distance.Instances = 120
-Visibility.Distance.BGArenas = 180
+Visibility.Distance.Instances = 170
+Visibility.Distance.BGArenas = 533
 Visibility.Distance.Object = 100
 Visibility.Distance.InFlight = 100
 Visibility.Distance.Grey.Unit   = 1
@@ -1485,6 +1493,20 @@ Death.Bones.BattlegroundOrArena = 1
 #        Default: 0 (disable)
 #                 1 (enable)
 #
+#	Battleground.AllowTwoSide
+#		Межфракционное БГ, т.е. на одной стороне могут сражаться Орда и Альянс
+#		Default: 1 (tnable)
+#				 0 (disable)
+#
+#	Battleground.AV.Mark, Battleground.WS.Mark, Battleground.AB.Mark, Battleground.EY.Mark
+#		ID предмета-марки соответствующего БГ. (AV - альтерак валей, WS - варсонг, AB - арати басин, EY - глаз шторма). При победе/порежении будет выдаваться именно этот предмет.
+#
+#	Battleground.AV.WinCount
+#		Количество марок за победу в БГ Альтерак. Остальные БГ по аналогии.
+#
+#	Battleground.AV.LoseCount
+#		Количество марок за поражение в БГ Альтера. Остальные БГ по аналогии.
+#
 ###############################################################################
 
 Battleground.CastDeserter = 1
@@ -1493,6 +1515,19 @@ Battleground.QueueAnnouncer.PlayerOnly = 0
 Battleground.PrematureReward = 1
 BattleGround.PrematureFinishTimer = 300000
 Battleground.LeaveWrathMode = 0
+Battleground.AllowTwoSide = 1
+Battleground.AV.Mark = 20560
+Battleground.WS.Mark = 20558
+Battleground.AB.Mark = 20559
+Battleground.EY.Mark = 29024
+Battleground.AV.WinCount = 3
+Battleground.AV.LoseCount = 1
+Battleground.WS.WinCount = 3
+Battleground.WS.LoseCount = 1
+Battleground.AB.WinCount = 3
+Battleground.AB.LoseCount = 1
+Battleground.EY.WinCount = 3
+Battleground.EY.LoseCount = 1
 
 ###############################################################################
 # ARENA CONFIG
@@ -1521,12 +1556,100 @@ Battleground.LeaveWrathMode = 0
 #        If automatic distribution is enabled in days
 #        Default: 7 (weekly)
 #
+#	Arena.FixedChangeRating
+#		Включение фиксированного изменения рейтинга арены (т.е. при победе/поражении изменение рейтинга не будет зависеть от рейтингов команд)
+#		Deafult: 0 (Выключено - стандартный расчёт изменения рейтинга в зависимости от рейтиннгов команд)
+#				 1 (Включено - фиксированное изменение рейтинга)
+#
+#	Arena.ChangeRatingCount
+#		Количество рейтинга при фиксированном изменении
+#		Default: 15 (Рейтинг команд быдет менять на 15)
+#				 5
+#				 10
+#				 50
+#
+#	Arena.MinChangeRating
+#		Включение ограничения минимального значения именения рейтинга (т.е. если стандартно расчитано изменение рейтинга на +X, а значение Arena.MinRatingCount > X, 
+#			то рейтинг команд изменится на значение Arena.MinRatingCount. Полезно когда команд мало) ВАЖНО!!! Если включен Arena.FixedChangeRating, то текущий параметр не учитывается.
+#		Default: 0 (Выключено - стандартный расчёт изменения рейтинга в зависимости от рейтиннгов команд)
+#				 1 (Включено - В случаях когда изменение меньше константы, рейтинг изменится на константу)
+#
+#	Arena.MinRatingCount
+#		Минимальное значение изменения рейтинга (та самая константа).
+#		Default: 5 (при окончании арены рейтинг команд изменится минимум на 5, даже если расчёт выдаст меньше. На пример, при победе 2100 над 1500)
+#				 10 или любое другое положительное значение
+#
+#	Arena.CanSeeInWhoListPrep
+#		Может ли игрок видеть в /who тех, кто на арене в подготовительной фазе
+#		По умолчанию: 1 (может)
+#					  0 (не может)
+#
+#	Rate.ArenaPoints
+#		Рейт арена поинтов. При начислении, стандартное количество умножается на него
+#		По умолчанию:	1 (стандартное количество)
+#						2 (в 2 раза больше)
+#						0.5 (в 2 раза меньше)
+#
+#	Arena.EndAfter.Time
+#		Время (в милисекундах), по прошествии которого арена завершится, независимо от того, победил кто-то или нет...
+#		Default:	0 (выключено)
+#					3600000 (завершить арену, если играют уже 1 час)
+#
+#	Arena.EndAfter.AlwaysDraw
+#		Если включено (=1), то по прошествии времени Арена заканчивается ничьёй. Если выключено (=0), то победитель тот, в чьей команде больше живых игроков.
+#
+#	Arena.Antifarm
+#		Включение проверок по IP участников арены и при совпадении наказывает за слив (1 - вкл; 0 - выкл). Подробнее о проверках:
+#			Если IP капитанов команд совпадают - проиграли обе команды
+#			Если IP игрока совпадает с одним из капитанов - все проиграли
+#			Если арена закончилась в подготовительной фарзе - победителя нет
+#
+#	Arena.NoLeave
+#		Запрет лива с арены, кроме если она уже закончилась (1 - вкл; 0 -выкл).
+#
+#	Arena.StartRating
+#		Начальный рейтинг новой команды и её участников
+#		Стандарное:	1500
+#
+#	Arena.Single
+#		Замена арены 5х5 ареной 1х1 (1 - вкл).
+#		При замене можно регитрировать команду 5х5 без подписей, так же доступен госсип npc_arena_1v1
+#
+#	Arena.Single.AP
+#		Коэффициент для начисления Арена Поинтов. В стандартной команде 5х5 он равен 1, а в 2х2 - 0,78. Желательно неменять. Для увеличесник кол-ва АПа за 1х1 выставить больше.
+#
+#	Arena.Single.RatingForVendor
+#		Не учитывать рейтинг 1х1 при покупке вещей в вендорах. (0 - даже если 1х1 будет 3к+ рейтинга а другой команды не будет - то не купить итем с требованием в 1600 рейтинга и т.п. Рейтинг 1х1 не учитывается)
+#															   (1 - рейтинг 1х1 учитывается как и любой другой)
+#
+#	Arena.Single.NoHealSpells
+#		Запрет на рег 1х1, если вкачаны основны таланты хилера (к примеру дерево у друида)
+#
+#	Arena.Single.MaxBH
+#		Запрет на рег 1х1, если бонус к лечению больше этого значения
+#
 ###############################################################################
 
 Arena.MaxRatingDifference = 150
 Arena.RatingDiscardTimer = 600000
 Arena.AutoDistributePoints = 0
 Arena.AutoDistributeInterval = 7
+Arena.FixedChangeRating = 0
+Arena.ChangeRatingCount = 15
+Arena.MinChangeRating = 0
+Arena.MinRatingCount = 5
+Arena.CanSeeInWhoListPrep = 0
+Rate.ArenaPoints = 1
+Arena.EndAfter.Time = 3600000
+Arena.EndAfter.AlwaysDraw = 1
+Arena.Antifarm = 1
+Arena.NoLeave = 1
+Arena.StartRating = 1500
+Arena.Single = 1
+Arena.Single.AP = 0.60
+Arena.Single.RatingForVendor = 0
+Arena.Single.NoHealSpells = 1
+Arena.Single.MaxBH = 1500
 
 ###############################################################################
 # NETWORK CONFIG
@@ -1924,6 +2047,11 @@ CharDelete.KeepDays = 30
 #        Players will automatically gain max weapon/defense skill when
 #         logging in, leveling up etc.
 #
+#	 Antifarm
+#		 Check in PVP. If IP is equally - is no honor give.
+#		 Default: 0 - disabled
+#
+#
 #    PvPToken.Enable
 #        Enable/disable PvP Token System. Players will get a token
 #         after slaying another player that gives honor.
@@ -1942,6 +2070,20 @@ CharDelete.KeepDays = 30
 #
 #    PvPToken.ItemCount
 #        Modify the item ID count - Default: 1
+#
+#    PvPRank.Rate.ExtraHonor
+#    Rate of honor bonus for killing higher PVP ranked players
+#    Default: 
+#        1 - 10% more honor per RANK difference
+#        2 - 20%
+#        0 - off
+#
+#    PvPRank.HKPerRank
+#    Honor Kills needed for each rank, use "," between values.
+#    Whole string must be enclosed with " "
+#    Always specify 14 values, for 14 ranks
+#    Default: 
+#        "10,50,100,200,450,750,1300,2000,3500,6000,9500,15000,21000,30000"
 #
 #    NoResetTalentsCost
 #        Enable or disable no cost when reseting talents
@@ -1987,6 +2129,34 @@ CharDelete.KeepDays = 30
 #       Default: 0 (Disabled)
 #                1 - Enabled
 #
+#	DuelMod.OnlyOpponentDetect
+#		Players in duel can see only their opponent
+#		Default: 0 (Disabled)
+#				 1 - Enabled
+#
+#	AreaFaction.Id
+#		ID of the Area where need change faction of players.
+#			Default: 0 (no area)
+#
+#	AreaFaction.Faction
+#		Faction ID what was changet for players in AreaFaction.Id
+#			Default: 0 (no faction)
+#
+#	DuelRewardSpellCast
+#		Cast spell on the winner of duel.
+#		Default: 0 (Disabled)
+#				 41232 - Spell
+#
+#	Rate.Resilience
+#		Default: 1
+#				 2 - 200%
+#				 0.5 - 50%
+#
+#	Rate.ResilienceLimitReduse
+#		Limit reduse crit damage from resilience
+#		Default: 25 - 25%
+#				 >50 - not recomended
+#
 ###############################################################################
 
 PlayerStart.AllReputation = 0
@@ -1995,10 +2165,13 @@ PlayerStart.MapsExplored = 0
 MusicInBattleground = 0
 HonorPointsAfterDuel = 0
 AlwaysMaxWeaponSkill = 0
+Antifarm = 0
 PvPToken.Enable = 0
 PvPToken.MapAllowType = 4
 PvPToken.ItemID = 29434
 PvPToken.ItemCount = 1
+PvPRank.Rate.ExtraHonor = 1
+PvPRank.HKPerRank = "10,50,100,200,450,750,1300,2000,3500,6000,9500,15000,21000,30000"
 NoResetTalentsCost = 0
 ShowKickInWorld = 0
 RecordUpdateTimeDiffInterval = 60000
@@ -2006,6 +2179,18 @@ MinRecordUpdateTimeDiff = 100
 PlayerStart.String = ""
 DuelMod.Enable = 0
 DuelMod.Cooldowns = 0
+DuelMod.OnlyOpponentDetect = 1
+AreaFaction.Id = 0
+AreaFaction.Faction = 1
+DuelRewardSpellCast = 41232
+Rate.Resilience = 1
+Rate.ResilienceLimitReduse = 25
+
+# Наложить мут на нового персонажа. Для усложнения жизни рекламеров. Измеряется в секундах...
+NewChar.MuteTime = 600
+
+# Не задействовать мут, если у игрока уровень ГМ больше или равен
+NewChar.MuteGMLevel = 1
 
 ###############################################################################
 # AUTO BROADCAST
@@ -2073,3 +2258,380 @@ Warden.ClientResponseDelay = 90
 Warden.ClientCheckHoldOff = 15
 Warden.LogFile = "warden.log"
 
+###############################################################################
+#  ANTICHEAT
+#
+#     Anticheat.Enable
+#        Description: Enables or disables the Anticheat System functionality
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+Anticheat.Enable = 1
+
+#     Anticheat.ReportsForIngameWarnings
+#        Description: How many reports the player must have to notify to GameMasters ingame when he generates a new report.
+#        Default:     70
+
+Anticheat.ReportsForIngameWarnings = 70
+
+#     Anticheat.DetectionsEnabled
+#        Description: It represents which detections are enabled.
+#
+#        SPEED_HACK_DETECTION            = 1
+#        FLY_HACK_DETECTION              = 2
+#        WALK_WATER_HACK_DETECTION       = 4
+#        JUMP_HACK_DETECTION             = 8
+#        TELEPORT_PLANE_HACK_DETECTION   = 16
+#        CLIMB_HACK_DETECTION            = 32
+#
+#        Default:     31
+
+Anticheat.DetectionsEnabled = 31
+
+#     Anticheat.MaxReportsForDailyReport
+#        Description: How many reports must the player have to make a report that it is in DB for a day (not only during the player's session).
+#        Default:     70
+
+Anticheat.MaxReportsForDailyReport = 70
+
+#	Anticheat.KickEnable
+#		Description: If ReportsForIngameWarnings Then Kick cheater!
+#		Default:	0 (Disabled)
+#					1 (Enabled)
+
+Anticheat.KickEnable = 1
+# Если кик не включен, то и бан работать не будет
+Anticheat.BanEnable = 1
+
+###############################################################################
+# CHAT LEXICS CUTTER
+#
+# Chat log parameters
+ChatLogEnable = 0
+
+# If this is enabled, all $d in file names are replaced with current date
+# This does include innormative lexics log
+ChatLogDateSplit = 1
+#
+# If this is enabled, UTF8 header is written into new files
+ChatLogUTFHeader = 1
+#
+# If this is enabled, chat log will ignore messages with unprintable chars
+ChatLogIgnoreUnprintable = 1
+#
+# Chat log files
+ChatLogChatFile = main_chat-$d.log
+ChatLogPartyFile = party_chat-$d.log
+ChatLogGuildFile = guild_chat-$d.log
+ChatLogWhisperFile = whisper_chat-$d.log
+ChatLogChannelFile = channel_chat-$d.log
+ChatLogRaidFile = raid_chat-$d.log
+ChatLogBattleGroundFile = bg_chat-$d.log
+#
+# Chat log screen logging
+ChatLogChatScreen = 0
+ChatLogPartyScreen = 0
+ChatLogGuildScreen = 0
+ChatLogWhisperScreen = 0
+ChatLogChannelScreen = 0
+ChatLogRaidScreen = 0
+ChatLogBattleGroundScreen = 0
+#
+# Lexics cutter parameters
+LexicsCutterEnable = 1
+
+LexicsCutterInnormativeCut = 1
+LexicsCutterCutReplacement = &!@^%!^&*!!!
+LexicsCutterLogFile = innormative-$d.log
+LexicsCutterScreenLog = 0
+LexicsCutterAnalogsFile = letter_analogs.conf
+LexicsCutterWordsFile = innormative_words.conf
+#
+# Where to cut lexics
+LexicsCutInChat = 1
+LexicsCutInParty = 1
+LexicsCutInGuild = 1
+LexicsCutInWhisper = 1
+LexicsCutInChannel = 1
+LexicsCutInRaid = 1
+LexicsCutInBattleGround = 1
+#
+# Ignore word spaces like: W O R D
+LexicsCutterIgnoreSpaces = 1
+#
+# Ignore repeats like: WWOOOORRRRRD
+LexicsCutterIgnoreRepeats = 1
+#
+# --- Action:
+# ---   0: log only
+# ---   1: sheep
+# ---   2: stun
+# ---   3: kill
+# ---   4: leave 5 health
+# ---   5: disable chat
+LexicsCutterAction = 0
+LexicsCutterActionDuration = 60000
+
+# Do not perform action on GM if this is enabled
+LexicsCutterNoActionOnGM = 1
+
+###############################################################################
+#  NPC TITLES VENDOR		Вендор званий
+#
+#  Условия суммируются т.е. звание может быть получино не отдельно за золото или
+#  рейтинг арены, а необходимо и то и другое.
+#
+# Mercurial Gladiator
+#
+# Titler.Glad.Gold - золото
+# Titler.Glad.Rating - Рейтинг арены
+# Titler.Glad.ItemID - ID предмета
+# Titler.Glad.ItemCount - Кол-во предметов
+# Titler.Glad.Honor - Очки чести
+# Titler.Glad.Ap - Очки арены
+#
+#    Остальные звания по аналогии...
+#
+#
+#	NPC TRANSMOGRIFICATION		Трансмогрификатор - изменение визуального вида сэтов
+#
+#	Условия суммируются т.е. звание может быть получино не отдельно за золото или
+#   рейтинг арены, а необходимо и то и другое.
+#
+#	Transmogrification.Gold - Цена трансмогрификации за золото
+#	Transmogrification.Honor - Хонор
+#	Transmogrification.ArenaPoints - Очки Арены
+#	Transmogrification.Rating - Рейтинг Арены
+#	Transmogrification.Item - ИД Предмета, необходимого для покупки
+#	Transmogrification.ItemCount - Кол-во предметов
+#
+#
+#
+#	NPC ARENA SPECTATOR		Арена Спектатор - просмотр боёв арены других игроков
+#
+#	Spectator.CanSeeInvis - может ли спектатор видеть игроков с невидимостью
+#		Default: 0 (не может)
+#				 1 (может)
+#
+###############################################################################
+
+Titler.Glad.Gold = 0
+Titler.Glad.Rating = 0
+Titler.Glad.ItemID = 0
+Titler.Glad.ItemCount = 0
+Titler.Glad.Honor = 0
+Titler.Glad.Ap = 0
+Titler.MGlad.Gold = 0
+Titler.MGlad.Rating = 0
+Titler.MGlad.ItemID = 0
+Titler.MGlad.ItemCount = 0
+Titler.MGlad.Honor = 0
+Titler.MGlad.Ap = 0
+Titler.VGlad.Gold = 0
+Titler.VGlad.Rating = 0
+Titler.VGlad.ItemID = 0
+Titler.VGlad.ItemCount = 0
+Titler.VGlad.Honor = 0
+Titler.VGlad.Ap = 0
+
+Transmogrification.Gold = 0
+Transmogrification.Honor = 0
+Transmogrification.ArenaPoints = 0 
+Transmogrification.Rating = 0
+Transmogrification.Item = 0
+Transmogrification.ItemCount = 0 
+
+Spectator.CanSeeInvis = 0
+###############################################################################
+#
+#	VIP SYSTEM
+#
+#	Система VIP статуса для определённых игроков. Используются команды:
+#		.vip - доступно игроку. Если он не VIP - показывает инфо сообщение об этом + показывает что было б по другому будь он VIPом.
+#		.vip add $char_name - Доступно ГМу. Добавляет игроку статус VIP.
+#		.vip delete $char_name - Доступно ГМу. Убирает статус VIP с игрока.
+#
+#
+#	Далее описание параметров для VIP. В скобках указанно какое значение ставить. Так же, где написано "больше чем у игрока" - вы можете поставить меньше - тогда так и будет.
+#		На VIP действуют отдельные параметры, не зависимо от того, что выставлено для остальных игроков (если иное не уточняется)
+#		Если у игрока идентичный параметр выставлен как 2, а в описании вип параметра написано "больше чем у игрока" - то следует выставлять больше чем 2.
+#
+
+# Ограничения максимального количества хонора и апа для випа (выставляется больше, чем для игрока)
+Vip.MaxHonorPoints = 75000
+Vip.MaxArenaPoints = 7500
+
+# Кол-во профессий для випа (больше чем для игрока)
+Vip.MaxPrimaryTradeSkill = 3
+
+# Кол-во подписей для создания гильдии (меньше чем для игрока)
+Vip.MinPetitionSigns = 5
+
+# Дистанция, на которой вип будет получать опыт качаясь в пати (больше чем у игрока)
+Vip.MaxGroupXPDistance = 100
+
+# Рейт дропа золота (больше чем у игрока)
+Vip.Rate.Drop.Money = 2
+
+# Рейт опыта для випа (больше чем у игрока)
+Vip.Rate.XP.Kill = 2
+Vip.Rate.XP.Quest = 2
+Vip.Rate.XP.Explore = 2
+
+# Рейт отдыха (больше чем у игрока)
+Vip.Rate.Rest.InGame = 2
+Vip.Rate.Rest.Offline.InTavernOrCity = 2
+Vip.Rate.Rest.Offline.InWilderness = 2
+
+# Рейт урона от падения (меньше чем у игрока)
+Vip.Rate.Damage.Fall = 0.5
+
+# Рейт получения репутации (больше чем у игрока)
+Vip.Rate.Reputation.Gain = 2
+
+# Рейт прокачки скилов. По сколько будет качаться. (больше чем у игрока)
+Vip.SkillGain.Crafting = 2
+Vip.SkillGain.Defense = 2
+Vip.SkillGain.Gathering = 2
+Vip.SkillGain.Weapon = 2
+
+# Уровень с которого вешается маска смерти. Для игрока - 11 обычно. Для випа можно выставить любой (вплодь до 71 - отключение)
+Vip.Death.SicknessLevel = 69
+
+# Бесплатное обнуление талантов (для игроков обычно платное)
+Vip.NoResetTalentsCost = 1
+
+# Рейт хонора (больше чем у игрока)
+Vip.Rate.Honor = 2
+
+# Рейт Арена Поинтов (Больше, чем у игрока).
+Vip.Rate.ArenaPoints = 1.5
+
+# Видимость в /who в подготовительной фазе арены (для игроков тоже можно выключить)
+Vip.Arena.CanSeeInWhoListPrep = 1
+
+# Вешать ли дезертира на випа (на игроков тоже омжно выключить)
+Vip.Battleground.CastDeserter = 0
+
+# Рейт получения марок на БГ. ВИП получает теже самые марки, что и игрок. Предмет-марка настраивается выше в разделе БГ. Но количество марок, получаемых випом:
+#	марок при победе = марок_как_и_игроку + значение Vip.RateBGMarksWin;
+#	марок при поражении = марок_как_и_игроку + значение Vip.RateBGMarksLose;
+Vip.RateBGMarksWin = 1
+Vip.RateBGMarksLose = 1
+
+# Количество хонора при победе в дуэли (больше чем игроку, если игроку вообще выставлено)
+Vip.HonorPointsAfterDuel = 5
+
+# Включение отображение в команде .vip данных о рейтах випов. Отдельно вкл/выкл параметров ПВЕ (к примеру рейт голды) и параметров ПВП (к примеру рейт арена поинтов)
+Vip.PVE.Info = 1
+Vip.PVP.Info = 1
+
+# При логине ВИП кастует спелл на самого себя
+Vip.Spell = 0
+
+# При логине на ВИПа вешается аура
+Vip.Aura = 0
+
+###############################################################################
+#
+#	REFERRALS SYSTEM
+#
+#	Система рефераллов. Каждый игрок может пригласить другого игрока на сервер и получать за это бонусы. Тот кто пригласил именуется РЕФЕРЕР. Тот кого пригласили - РЕФЕРАЛ!!!!
+#	Когда игрока пригласили на сервер, после создания персонажа и логина в игру, он долженпрописать команду:
+#		.ref add НИК_РЕФЕРЕРА
+#
+#	После этой команды данные будут занесены в базу. Повторная пропись команды результата не имеет. Игрок может быть приглашён только ОДНИМ другим игроком, но он может пригласить много игроков.
+#	Снять привязку реферал-реферер может только ГМ прописав команду:
+#		.ref delete НИК_РЕФЕРАЛА
+#
+#	При этом все полученные бонусы и призы останутся у реферера.
+#
+#
+#	БОНУСЫ И ПРИЗЫ
+#
+#	Иным словом, подарки. Реферер получает подарки за каждого реферала, который играет. Причём получение подарков зависит от того, сколько времени реферал провёл в игре.
+#	Время ститается с момента напиания команды .ref add, а не с момента первого логина.
+#	Далее конфиги для 3х уровней получения подарков за рефералов.
+#
+
+# Время, которое должен отыграть (именно время игры) реферал, чтоб реферер получил ПЕРВЫЙ подарок. Время в ЧАСАХ!!!
+Referrals.TimeFirst = 24
+
+# Время, которое должен отыграть (именно время игры) реферал, чтоб реферер получил ВТОРОЙ подарок. Время в ЧАСАХ!!!
+Referrals.TimeSecond = 100
+
+# Время, которое должен отыграть (именно время игры) реферал, чтоб реферер получил ТРЕТИЙ подарок. Время в ЧАСАХ!!!
+Referrals.TimeThird = 300
+
+# ПЕРВЫЙ подарок. Принцип сложения. т.е. реферер может получить и хонор, и ап, и итемы...   Для начисления первого подарка используйте команду .ref first
+# Как только время игры реферала достигнет Referrals.TimeFirst
+# Реферер получит золота:
+Referrals.FirstGold = 5
+# Реферер получит хонора:
+Referrals.FirstHonor = 500
+# Реферер получит АПа:
+Referrals.FirstAP = 50
+# Реферер получит итем:
+Referrals.FirstItemID = 29434
+# Реферер получит вышеупомянутый итем в количетве:
+Referrals.FirstItemCount = 5
+
+
+# Далее по аналогии с ПЕРВЫМ подарком...
+
+# ВТОРОЙ подарок. Принцип сложения. т.е. реферер может получить и хонор, и ап, и итемы...   Для начисления первого подарка используйте команду .ref second
+Referrals.SecondGold = 10
+Referrals.SecondHonor = 1000
+Referrals.SecondAP = 100
+Referrals.SecondItemID = 29434
+Referrals.SecondItemCount = 10
+
+# ТРЕТИЙ подарок. Принцип сложения. т.е. реферер может получить и хонор, и ап, и итемы...   Для начисления первого подарка используйте команду .ref third
+Referrals.ThirdGold = 20
+Referrals.ThirdHonor = 2000
+Referrals.ThirdAP = 200
+Referrals.ThirdItemID = 29434
+Referrals.ThirdItemCount = 20
+
+###############################################################################
+#
+#	BONUSES FOR PLAYED TIME (BFPT)
+#
+#	Система бонусов, за отыгранное время для каждого игрока.
+#	Начисление бонусов выполняется одной единственной командой .bfpt
+#	После написания команды игроку начисляются бонусы в базивимости от отыгранного времени и конфига (ниже)
+#
+#
+#Игрок получит первый бонус отыграв часов:
+BonusForPlayerdTime.First = 48
+#Второй бонус отыграв часов:
+BonusForPlayerdTime.Second = 200
+#Третий бонус отыграв яасов:
+BonusForPlayerdTime.Third = 500
+
+#Отыграв кол-во часов BonusForPlayerdTime.First игрок получит:
+#Золота:
+BonusForPlayerdTime.FirstGold = 5
+#Хонора:
+BonusForPlayerdTime.FirstHonor = 500
+#Арена поинтов:
+BonusForPlayerdTime.FirstAP = 50
+#Предмет:
+BonusForPlayerdTime.FirstItemID = 29434
+#В поличестве:
+BonusForPlayerdTime.FirstItemCount = 5
+
+#Настройки ВТОРОГО и ТРЕТЬЕГО бонусов аналогично первому.
+BonusForPlayerdTime.SecondGold = 10
+BonusForPlayerdTime.SecondHonor = 1000
+BonusForPlayerdTime.SecondAP = 100
+BonusForPlayerdTime.SecondItemID = 29434
+BonusForPlayerdTime.SecondItemCount = 10
+
+BonusForPlayerdTime.ThirdGold = 20
+BonusForPlayerdTime.ThirdHonor = 2000
+BonusForPlayerdTime.ThirdAP = 200
+BonusForPlayerdTime.ThirdItemID = 29434
+BonusForPlayerdTime.ThirdItemCount = 20
+
+###############################################################################

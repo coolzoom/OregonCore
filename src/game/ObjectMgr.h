@@ -757,6 +757,7 @@ class ObjectMgr
         void LoadGameobjectRespawnTimes();
         void LoadItemPrototypes();
         void LoadItemLocales();
+		void LoadTransmogrifications();
         void LoadQuestLocales();
         void LoadNpcTextLocales();
         void LoadPageTextLocales();
@@ -1026,6 +1027,8 @@ class ObjectMgr
         {
             return GossipMenuItemsMapBounds(m_mGossipMenuItemsMap.lower_bound(uiMenuId),m_mGossipMenuItemsMap.upper_bound(uiMenuId));
         }
+
+		ItemFakeEntryContainer _itemFakeEntryStore; // custom
 
     protected:
 

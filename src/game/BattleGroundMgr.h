@@ -127,6 +127,8 @@ class BattleGroundQueue
     private:
 
         bool InviteGroupToBG(GroupQueueInfo * ginfo, BattleGround * bg, uint32 side);
+
+		uint32 m_BgInstanceGUID;
 };
 
 /*
@@ -230,6 +232,9 @@ class BattleGroundMgr
         uint32 GetMaxRatingDifference() const {return m_MaxRatingDifference;}
         uint32 GetRatingDiscardTimer() const {return m_RatingDiscardTimer;}
 
+		uint32 GetArenaEndAfterTime() const;
+        bool IsArenaEndAfterAlwaysDraw() const;
+
         void InitAutomaticArenaPointDistribution();
         void DistributeArenaPoints();
         uint32 GetPrematureFinishTime() const {return m_PrematureFinishTimer;}
@@ -239,10 +244,12 @@ class BattleGroundMgr
         bool isTesting() const { return m_Testing; }
 
         void SetHolidayWeekends(uint32 mask);
+
+		BattleGroundSet m_BattleGrounds;
     private:
 
         /* Battlegrounds */
-        BattleGroundSet m_BattleGrounds;
+        //BattleGroundSet m_BattleGrounds;
         uint32 m_MaxRatingDifference;
         uint32 m_RatingDiscardTimer;
         uint32 m_NextRatingDiscardUpdate;

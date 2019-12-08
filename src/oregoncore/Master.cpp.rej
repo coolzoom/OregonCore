@@ -1,0 +1,36 @@
+--- Master.cpp
++++ Master.cpp
+@@ -77,7 +83,7 @@
+             else if (getMSTimeDiff(w_lastchange,curtime) > _delaytime)
+             {
+                 sLog.outError("World Thread is stuck.  Terminating server!");
+-                abort();
++                *((uint32 volatile*)NULL) = 0;                       // bang crash
+             }
+         }
+         sLog.outString("Anti-freeze thread exiting without problems.");
+@@ -246,7 +254,6 @@
+     // Stop soap thread
+     if (soap_thread)
+     {
+-        soap_thread->interrupt();
+         soap_thread->wait();
+         delete soap_thread;
+     }
+@@ -308,15 +314,13 @@
+         DWORD numb;
+         WriteConsoleInput(hStdIn, b, 4, &numb);
+ 
+-        cliThread->wait();
+-
+         #else
+ 
+         cliThread->interrupt();
+-        cliThread->wait();
+ 
+         #endif
+ 
++        cliThread->wait();
+         delete cliThread;
+     }
+ 

@@ -1329,6 +1329,78 @@ CreatureAI* GetAI_npc_force_of_nature_treants(Creature* pCreature)
     return new npc_force_of_nature_treantsAI(pCreature);
 }
 
+struct npc_training_dummy : Scripted_NoMovementAI
+{
+        npc_training_dummy(Creature *c) : Scripted_NoMovementAI(c)
+        {
+                m_Entry = c->GetEntry();
+        }
+        uint64 m_Entry;
+        uint32 ResetTimer;
+        uint32 DespawnTimer;
+
+        void Reset()
+        {
+                me->SetControlled(true,UNIT_STAT_STUNNED);//disable rotate
+                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);//imune to knock aways like blast wave
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_STUN, true);
+                ResetTimer = 10000;
+                DespawnTimer = 15000;
+        }
+
+        void EnterEvadeMode()
+        {
+                if (!_EnterEvadeMode())
+                        return;
+                Reset();
+        }
+
+        void DamageTaken(Unit *done_by, uint32 &damage)
+        {
+                ResetTimer = 10000;
+                damage = 0;
+                DespawnTimer = 15000;
+        }
+
+        void EnterCombat(Unit *who)
+        {
+                if (m_Entry != 2674 && m_Entry != 2673 && m_Entry !=17578)
+                        return;
+        }
+
+        void UpdateAI(const uint32 diff)
+        {
+                if (!UpdateVictim())
+                        return;
+                if (!me->hasUnitState(UNIT_STAT_STUNNED))
+                        me->SetControlled(true,UNIT_STAT_STUNNED);//disable rotate
+                if (m_Entry != 2674 && m_Entry != 2673 && m_Entry !=17578)
+                {
+                        if (ResetTimer <= diff)
+                        {
+                                EnterEvadeMode();
+                                ResetTimer = 10000;
+                        }
+                        else
+                                ResetTimer -= diff;
+                        return;
+                }
+                else
+                {
+                        if (DespawnTimer <= diff)
+                                me->ForcedDespawn();
+                        else
+                                DespawnTimer -= diff;
+                }
+        }
+        void MoveInLineOfSight(Unit *who){return;}
+};
+
+CreatureAI* GetAI_npc_training_dummy(Creature* pCreature)
+{
+        return new npc_training_dummy (pCreature);
+}
+
 /*####
 ## npc_snake_trap_serpents
 ####*/
@@ -1593,6 +1665,11 @@ void AddSC_npcs_special()
     newscript = new Script;
     newscript->Name = "npc_force_of_nature_treants";
     newscript->GetAI = &GetAI_npc_force_of_nature_treants;
+    newscript->RegisterSelf();
+
+	newscript = new Script;
+    newscript->Name = "npc_training_dummy";
+    newscript->GetAI = &GetAI_npc_training_dummy;
     newscript->RegisterSelf();
 
     newscript = new Script;

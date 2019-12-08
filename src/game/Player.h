@@ -82,6 +82,11 @@ enum BuyBankSlotResult
     ERR_BANKSLOT_OK                 = 3
 };
 
+enum TransmogrificationResult // custom
+{
+	ERR_FAKE_OK
+};
+
 enum PlayerSpellState
 {
     PLAYERSPELL_UNCHANGED = 0,
@@ -367,6 +372,27 @@ enum PlayerFlags
     PLAYER_FLAGS_UNK4           = 0x00020000,               // taxi benchmark mode (on/off) (2.0.1)
     PLAYER_UNK                  = 0x00040000,               // 2.0.8...
 };
+
+#define PLAYER_TITLE_MASK_ALLIANCE_PVP             \
+    ( PLAYER_TITLE_PRIVATE | PLAYER_TITLE_CORPORAL |  \
+      PLAYER_TITLE_SERGEANT_A | PLAYER_TITLE_MASTER_SERGEANT | \
+      PLAYER_TITLE_SERGEANT_MAJOR | PLAYER_TITLE_KNIGHT | \
+      PLAYER_TITLE_KNIGHT_LIEUTENANT | PLAYER_TITLE_KNIGHT_CAPTAIN | \
+      PLAYER_TITLE_KNIGHT_CHAMPION | PLAYER_TITLE_LIEUTENANT_COMMANDER | \
+      PLAYER_TITLE_COMMANDER | PLAYER_TITLE_MARSHAL | \
+      PLAYER_TITLE_FIELD_MARSHAL | PLAYER_TITLE_GRAND_MARSHAL )
+
+#define PLAYER_TITLE_MASK_HORDE_PVP                           \
+    ( PLAYER_TITLE_SCOUT | PLAYER_TITLE_GRUNT |  \
+      PLAYER_TITLE_SERGEANT_H | PLAYER_TITLE_SENIOR_SERGEANT | \
+      PLAYER_TITLE_FIRST_SERGEANT | PLAYER_TITLE_STONE_GUARD | \
+      PLAYER_TITLE_BLOOD_GUARD | PLAYER_TITLE_LEGIONNAIRE | \
+      PLAYER_TITLE_CENTURION | PLAYER_TITLE_CHAMPION | \
+      PLAYER_TITLE_LIEUTENANT_GENERAL | PLAYER_TITLE_GENERAL | \
+      PLAYER_TITLE_WARLORD | PLAYER_TITLE_HIGH_WARLORD )
+
+#define PLAYER_TITLE_MASK_ALL_PVP  \
+    ( PLAYER_TITLE_MASK_ALLIANCE_PVP | PLAYER_TITLE_MASK_HORDE_PVP )
 
 // used for PLAYER__FIELD_KNOWN_TITLES field (uint64), (1<<bit_index) without (-1)
 // can't use enum for uint64 values
@@ -935,6 +961,16 @@ class Player : public Unit, public GridObject<Player>
         void SetGMVisible(bool on);
         void SetPvPDeath(bool on) { if (on) m_ExtraFlags |= PLAYER_EXTRA_PVP_DEATH; else m_ExtraFlags &= ~PLAYER_EXTRA_PVP_DEATH; }
 
+		bool isSpectator() const  { return spectatorFlag; }
+		void SetSpectator(bool on);
+
+		//VIP system
+		bool isVip() const { return vipFlag; }
+		void SetVip(bool on);
+
+		bool isNewChar() const { return newCharFlag; }
+		void SetNewChar(bool on);
+
         void GiveXP(uint32 xp, Unit* victim);
         void GiveLevel(uint32 level);
         void InitStatsForLevel(bool reapplyMods = false);
@@ -1098,6 +1134,12 @@ class Player : public Unit, public GridObject<Player>
         void ClearTrade();
         void TradeCancel(bool sendback);
         uint16 GetItemPosByTradeSlot(uint32 slot) const { return tradeItems[slot]; }
+		Item *GetItemByTradeSlot(uint8 slot) const
+        {
+            if (slot < TRADE_SLOT_COUNT && tradeItems[slot])
+                return GetItemByGuid(tradeItems[slot]);
+            return NULL;
+        }
 
         void UpdateEnchantTime(uint32 time);
         void UpdateItemDuration(uint32 time, bool realtimeonly=false);
@@ -1745,8 +1787,10 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetHonorPoints() { return GetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY); }
         uint32 GetArenaPoints() { return GetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY); }
         void ModifyHonorPoints(int32 value);
-        void ModifyArenaPoints(int32 value);
+        void ModifyArenaPoints(int32 value, bool update = true);
         uint32 GetMaxPersonalArenaRatingRequirement();
+
+		void UpdateKnownTitles();
 
         //End of PvP System
 
@@ -2032,6 +2076,7 @@ class Player : public Unit, public GridObject<Player>
         void UpdateObjectVisibility(bool forced = true);
         void UpdateVisibilityForPlayer();
         void UpdateVisibilityOf(WorldObject* target);
+		void UpdateTriggerVisibility();
 
         template<class T>
             void UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow);
@@ -2051,6 +2096,14 @@ class Player : public Unit, public GridObject<Player>
         void SetTemporaryUnsummonedPetNumber(uint32 petnumber) { m_temporaryUnsummonedPetNumber = petnumber; }
         uint32 GetOldPetSpell() const { return m_oldpetspell; }
         void SetOldPetSpell(uint32 petspell) { m_oldpetspell = petspell; }
+
+		// Handle pet status here
+        PetStatus GetPetStatus() const { return m_petStatus; }
+        void SetPetStatus(PetStatus status) { m_petStatus = status; }
+
+        bool isPetDeadAndRemoved() const { return (m_petStatus == PET_STATUS_DEAD_AND_REMOVED); }
+        bool isPetDismissed() const { return (m_petStatus == PET_STATUS_DISMISSED); }
+        bool doesOwnPet() const { return (m_petStatus != PET_STATUS_NONE); }
 
         void SendCinematicStart(uint32 CinematicSequenceId);
 
@@ -2116,6 +2169,11 @@ class Player : public Unit, public GridObject<Player>
         bool HasTitle(uint32 bitIndex);
         bool HasTitle(CharTitlesEntry const* title) { return HasTitle(title->bit_index); }
         void SetTitle(CharTitlesEntry const* title, bool lost = false);
+
+		uint32 SuitableForTransmogrification(Item* oldItem, Item* newItem); // custom
+
+		void ChangeRace(uint8 new_race);
+		bool SwitchReputation(uint32 faction1Id, uint32 faction2Id);
 
     protected:
 
@@ -2263,7 +2321,7 @@ class Player : public Unit, public GridObject<Player>
 
         Player *pTrader;
         bool acceptTrade;
-        uint16 tradeItems[TRADE_SLOT_COUNT];
+        uint64 tradeItems[TRADE_SLOT_COUNT];
         uint32 tradeGold;
 
         time_t m_nextThinkTime;
@@ -2329,6 +2387,14 @@ class Player : public Unit, public GridObject<Player>
         float  m_summon_z;
 
         DeclinedName *m_declinedname;
+
+		bool spectatorFlag;
+
+		//VIP system
+		bool vipFlag;
+
+		bool newCharFlag;
+
     private:
         // internal common parts for CanStore/StoreItem functions
         uint8 _CanStoreItem_InSpecificSlot(uint8 bag, uint8 slot, ItemPosCountVec& dest, ItemPrototype const *pProto, uint32& count, bool swap, Item *pSrcItem) const;
@@ -2340,6 +2406,7 @@ class Player : public Unit, public GridObject<Player>
         uint8 m_MirrorTimerFlags;
         uint8 m_MirrorTimerFlagsLast;
         bool m_isInWater;
+		bool m_wasOutdoors;
 
         void SetCanDelayTeleport(bool setting) { m_bCanDelayTeleport = setting; }
         bool IsHasDelayedTeleport() const
@@ -2388,6 +2455,9 @@ class Player : public Unit, public GridObject<Player>
         // Temporary removed pet cache
         uint32 m_temporaryUnsummonedPetNumber;
         uint32 m_oldpetspell;
+
+		// Status of your currently controlled pet
+        PetStatus m_petStatus;
 };
 
 void AddItemsSetItem(Player*player,Item *item);

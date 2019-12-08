@@ -3953,6 +3953,18 @@ bool ChatHandler::HandleDieCommand(const char* /*args*/)
     return true;
 }
 
+// Kills the unit and grants the corpse ownership rights to the command caller
+bool ChatHandler::HandleKillCommand(const char* /*args*/)
+{
+    if (Unit* target = getSelectedUnit())
+    {
+        // Converts the targets health points value from integer to string data format
+        std::string damage = static_cast<std::ostringstream*>(&(std::ostringstream() << int(target->GetHealth())))->str();
+        return HandleDamageCommand(damage.c_str());
+    }
+    else return false;
+}
+
 bool ChatHandler::HandleDamageCommand(const char * args)
 {
     if (!*args)
@@ -5611,6 +5623,331 @@ bool ChatHandler::HandleCompleteQuest(const char *args)
     player->CompleteQuest(entry);
     return true;
 }
+bool ChatHandler::HandleVipAddCommand(const char* args)
+{
+	if (!*args)
+        return false;
+
+	char *player_name = strtok((char*)args, " ");
+    if (!player_name)
+        return false;
+
+	std::string p_name = player_name;
+
+	if (!normalizePlayerName(p_name))
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+	uint64 player_guid = objmgr.GetPlayerGUIDByName(p_name.c_str());
+    if (!player_guid)
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    Player *player = objmgr.GetPlayer(player_guid);
+
+	CharacterDatabase.PExecute("INSERT INTO `vip` VALUES (%u, NOW())", player_guid);
+
+	PSendSysMessage("Player %s is VIP now!", p_name.c_str());
+
+	if (player)
+	{
+		player->SetVip(true);
+        ChatHandler(player).PSendSysMessage("You are VIP now!!! To info about VIP status use .vip");
+	}
+
+	return true;
+}
+
+bool ChatHandler::HandleVipDeleteCommand(const char* args)
+{
+	if (!*args)
+        return false;
+
+	char *player_name = strtok((char*)args, " ");
+    if (!player_name)
+        return false;
+
+	std::string p_name = player_name;
+
+	if (!normalizePlayerName(p_name))
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+	uint64 player_guid = objmgr.GetPlayerGUIDByName(p_name.c_str());
+    if (!player_guid)
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    Player *player = objmgr.GetPlayer(player_guid);
+
+	CharacterDatabase.PExecute("DELETE FROM `vip` WHERE `guid` = %u", player_guid);
+
+	PSendSysMessage("Player %s is NOT VIP now!", p_name.c_str());
+
+	if (player)
+	{
+		player->SetVip(false);
+        ChatHandler(player).PSendSysMessage("You are NOT VIP now!!! Please no cry noob ;)))");
+	}
+
+	return true;
+}
+
+// Referral system
+bool ChatHandler::HandleReferralDeleteCommand(const char* args)
+{
+	if (!*args)
+        return false;
+
+    char *referralname = strtok((char*)args, " ");
+    if (!referralname)
+        return false;
+
+    std::string rlname = referralname;
+
+	if (!normalizePlayerName(rlname))
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+	uint64 rlguid = objmgr.GetPlayerGUIDByName(rlname.c_str());
+    if (!rlguid)
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    Player *rlplr = objmgr.GetPlayer(rlguid);
+
+	QueryResult_AutoPtr rlInfo = CharacterDatabase.PQuery("SELECT `referral_guid` FROM `referrals` WHERE `referral_guid` = '%u'", rlguid);
+	if (!rlInfo)
+	{
+		PSendSysMessage("Player %s have not REFERRER!!!", rlname);
+		return false;
+	}
+
+	CharacterDatabase.PExecute("DELETE FROM `referrals` WHERE `referral_guid` = %u", rlguid);
+
+	PSendSysMessage("REFERRER of Player %s is Deleted", rlname);
+
+	if (rlplr)
+		ChatHandler(rlplr).PSendSysMessage("Your REFERRER is Deleted. You can register new refferer! Use .ref add command.");
+
+	return true;
+}
+
+bool ChatHandler::HandleReferralPresentFirstCommand(const char* /*args*/)
+{
+	uint32 reftime = sWorld.getConfig(CONFIG_REF_TIME_FIRST)*3600;
+	QueryResult_AutoPtr refresult = CharacterDatabase.PQuery("SELECT `refferer_guid` FROM `referrals` WHERE `present_1` = 0 AND `referral_guid` IN (SELECT `guid` FROM `characters` WHERE (`totaltime`-`totaltime_start`) >= %u)", reftime);
+	if (!refresult)
+	{
+		PSendSysMessage("No Players for giving presents :( ");
+		return true;
+	}
+	uint32 gold = sWorld.getConfig(CONFIG_REF_FIRST_GOLD)*10000;
+	uint32 honor = sWorld.getConfig(CONFIG_REF_FIRST_HONOR);
+	uint32 ap = sWorld.getConfig(CONFIG_REF_FIRST_AP);
+	uint32 itemid = sWorld.getConfig(CONFIG_REF_FIRST_ITEM_ID);
+	uint32 itemcount = sWorld.getConfig(CONFIG_REF_FIRST_ITEM_COUNT);
+	do
+	{
+		Field* fields = refresult->Fetch();
+		uint64 rrguid = fields[0].GetInt64();
+		CharacterDatabase.PExecute("UPDATE `referrals` SET `present_1` = 1 WHERE referral_guid = %u", rrguid);
+
+		if (Player *rrplr = objmgr.GetPlayer(rrguid))
+		{
+			if (rrplr->IsInWorld())
+			{
+				if (gold > 0)
+					rrplr->ModifyMoney(gold);
+				if (honor > 0)
+					rrplr->ModifyHonorPoints(honor);
+				if (ap > 0)
+					rrplr->ModifyArenaPoints(ap);
+			}
+		}
+		else
+		{
+			if (gold > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `money` = `money`+%u WHERE `guid` = %u", gold, rrguid);
+			if (honor > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `totalHonorPoints` = `totalHonorPoints`+%u WHERE `guid` = %u", honor, rrguid);
+			if (ap > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `arenaPoints` = `arenaPoints`+%u WHERE `guid` = %u", ap, rrguid);
+		}
+		if (itemid > 0 && itemcount > 0)
+		{
+			Player *rrplr = objmgr.GetPlayer(rrguid);
+			if (Item* item = Item::CreateItem(itemid,itemcount,rrplr))
+			{
+				item->SaveToDB();
+
+				std::string subject = "Present for Referral";
+				std::string textFormat = "Present for Referral";
+				char textBuf[300];
+				snprintf(textBuf,300,textFormat.c_str(),GetName(),GetName());
+				uint32 itemTextId = objmgr.CreateItemText(textBuf);
+				MailSender sender(MAIL_NORMAL,m_session ? m_session->GetPlayer()->GetGUIDLow() : 0, MAIL_STATIONERY_GM);
+
+				MailDraft(subject, itemTextId)
+					.AddItem(item)
+					.SendMailTo(MailReceiver(rrplr,GUID_LOPART(rrguid)), sender);
+			}
+		}
+	}
+	while (refresult->NextRow());
+
+	return true;
+}
+
+bool ChatHandler::HandleReferralPresentSecondCommand(const char* /*args*/)
+{
+	uint32 reftime = sWorld.getConfig(CONFIG_REF_TIME_SECOND)*3600;
+	QueryResult_AutoPtr refresult = CharacterDatabase.PQuery("SELECT `refferer_guid` FROM `referrals` WHERE `present_2` = 0 AND `referral_guid` IN (SELECT `guid` FROM `characters` WHERE (`totaltime`-`totaltime_start`) >= %u)", reftime);
+	if (!refresult)
+	{
+		PSendSysMessage("No Players for giving presents :( ");
+		return true;
+	}
+	uint32 gold = sWorld.getConfig(CONFIG_REF_SECOND_GOLD)*10000;
+	uint32 honor = sWorld.getConfig(CONFIG_REF_SECOND_HONOR);
+	uint32 ap = sWorld.getConfig(CONFIG_REF_SECOND_AP);
+	uint32 itemid = sWorld.getConfig(CONFIG_REF_SECOND_ITEM_ID);
+	uint32 itemcount = sWorld.getConfig(CONFIG_REF_SECOND_ITEM_COUNT);
+	do
+	{
+		Field* fields = refresult->Fetch();
+		uint64 rrguid = fields[0].GetInt64();
+		CharacterDatabase.PExecute("UPDATE `referrals` SET `present_2` = 1 WHERE referral_guid = %u", rrguid);
+
+		if (Player *rrplr = objmgr.GetPlayer(rrguid))
+		{
+			if (rrplr->IsInWorld())
+			{
+				if (gold > 0)
+					rrplr->ModifyMoney(gold);
+				if (honor > 0)
+					rrplr->ModifyHonorPoints(honor);
+				if (ap > 0)
+					rrplr->ModifyArenaPoints(ap);
+			}
+		}
+		else
+		{
+			if (gold > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `money` = `money`+%u WHERE `guid` = %u", gold, rrguid);
+			if (honor > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `totalHonorPoints` = `totalHonorPoints`+%u WHERE `guid` = %u", honor, rrguid);
+			if (ap > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `arenaPoints` = `arenaPoints`+%u WHERE `guid` = %u", ap, rrguid);
+		}
+		if (itemid > 0 && itemcount > 0)
+		{
+			Player *rrplr = objmgr.GetPlayer(rrguid);
+			if (Item* item = Item::CreateItem(itemid,itemcount,rrplr))
+			{
+				item->SaveToDB();
+
+				std::string subject = "Present for Referral";
+				std::string textFormat = "Present for Referral";
+				char textBuf[300];
+				snprintf(textBuf,300,textFormat.c_str(),GetName(),GetName());
+				uint32 itemTextId = objmgr.CreateItemText(textBuf);
+				MailSender sender(MAIL_NORMAL,m_session ? m_session->GetPlayer()->GetGUIDLow() : 0, MAIL_STATIONERY_GM);
+
+				MailDraft(subject, itemTextId)
+					.AddItem(item)
+					.SendMailTo(MailReceiver(rrplr,GUID_LOPART(rrguid)), sender);
+			}
+		}
+	}
+	while (refresult->NextRow());
+
+	return true;
+}
+
+bool ChatHandler::HandleReferralPresentThirdCommand(const char* /*args*/)
+{
+	uint32 reftime = sWorld.getConfig(CONFIG_REF_TIME_THIRD)*3600;
+	QueryResult_AutoPtr refresult = CharacterDatabase.PQuery("SELECT `refferer_guid` FROM `referrals` WHERE `present_3` = 0 AND `referral_guid` IN (SELECT `guid` FROM `characters` WHERE (`totaltime`-`totaltime_start`) >= %u)", reftime);
+	if (!refresult)
+	{
+		PSendSysMessage("No Players for giving presents :( ");
+		return true;
+	}
+	uint32 gold = sWorld.getConfig(CONFIG_REF_THIRD_GOLD)*10000;
+	uint32 honor = sWorld.getConfig(CONFIG_REF_THIRD_HONOR);
+	uint32 ap = sWorld.getConfig(CONFIG_REF_THIRD_AP);
+	uint32 itemid = sWorld.getConfig(CONFIG_REF_THIRD_ITEM_ID);
+	uint32 itemcount = sWorld.getConfig(CONFIG_REF_THIRD_ITEM_COUNT);
+	do
+	{
+		Field* fields = refresult->Fetch();
+		uint64 rrguid = fields[0].GetInt64();
+		CharacterDatabase.PExecute("UPDATE `referrals` SET `present_3` = 1 WHERE referral_guid = %u", rrguid);
+
+		if (Player *rrplr = objmgr.GetPlayer(rrguid))
+		{
+			if (rrplr->IsInWorld())
+			{
+				if (gold > 0)
+					rrplr->ModifyMoney(gold);
+				if (honor > 0)
+					rrplr->ModifyHonorPoints(honor);
+				if (ap > 0)
+					rrplr->ModifyArenaPoints(ap);
+			}
+		}
+		else
+		{
+			if (gold > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `money` = `money`+%u WHERE `guid` = %u", gold, rrguid);
+			if (honor > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `totalHonorPoints` = `totalHonorPoints`+%u WHERE `guid` = %u", honor, rrguid);
+			if (ap > 0)
+				CharacterDatabase.PExecute("UPDATE `characters` SET `arenaPoints` = `arenaPoints`+%u WHERE `guid` = %u", ap, rrguid);
+		}
+		if (itemid > 0 && itemcount > 0)
+		{
+			Player *rrplr = objmgr.GetPlayer(rrguid);
+			if (Item* item = Item::CreateItem(itemid,itemcount,rrplr))
+			{
+				item->SaveToDB();
+
+				std::string subject = "Present for Referral";
+				std::string textFormat = "Present for Referral";
+				char textBuf[300];
+				snprintf(textBuf,300,textFormat.c_str(),GetName(),GetName());
+				uint32 itemTextId = objmgr.CreateItemText(textBuf);
+				MailSender sender(MAIL_NORMAL,m_session ? m_session->GetPlayer()->GetGUIDLow() : 0, MAIL_STATIONERY_GM);
+
+				MailDraft(subject, itemTextId)
+					.AddItem(item)
+					.SendMailTo(MailReceiver(rrplr,GUID_LOPART(rrguid)), sender);
+			}
+		}
+	}
+	while (refresult->NextRow());
+
+	return true;
+}
 
 bool ChatHandler::HandleBanAccountCommand(const char *args)
 {
@@ -6090,9 +6427,13 @@ bool ChatHandler::HandleRespawnCommand(const char* /*args*/)
             SetSentErrorMessage(true);
             return false;
         }
-
-        if (target->isDead())
-            target->ToCreature()->Respawn();
+        else if (!target->isDead())
+        {
+            SendSysMessage(LANG_CREATURE_NOT_DEAD);
+            SetSentErrorMessage(true);
+            return false;
+        }
+        target->ToCreature()->Respawn();
         return true;
     }
 

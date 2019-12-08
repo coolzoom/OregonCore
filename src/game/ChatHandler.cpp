@@ -30,6 +30,7 @@
 #include "Guild.h"
 #include "Language.h"
 #include "Log.h"
+#include "ChatLog.h"
 #include "Opcodes.h"
 #include "MapManager.h"
 #include "Player.h"
@@ -168,6 +169,12 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
             return;
         }
 
+		if (_player->isNewChar() && _player->GetSession()->GetSecurity() < sWorld.getConfig(CONFIG_NEWCHAR_MUTE_GM_LEVEL))
+		{
+			SendNotification("Your chat is DISABLED. You can speak when the played time is more than %u", sWorld.getConfig(CONFIG_NEWCHAR_MUTE_TIME));
+			return;
+		}
+
         if (type != CHAT_MSG_AFK && type != CHAT_MSG_DND)
             GetPlayer()->UpdateSpeakTime();
     }
@@ -205,11 +212,38 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
                 break;
 
             if (type == CHAT_MSG_SAY)
-                GetPlayer()->Say(msg, lang);
+			{
+				sChatLog.ChatMsg(GetPlayer(), msg, type);
+				if (GetPlayer()->isSpectator())
+				{
+					SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+					return;
+				}
+				else
+					GetPlayer()->Say(msg, lang);
+			}
             else if (type == CHAT_MSG_EMOTE)
-                GetPlayer()->TextEmote(msg);
+			{
+				sChatLog.ChatMsg(GetPlayer(), msg, type);
+				if (GetPlayer()->isSpectator())
+				{
+					SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+					return;
+				}
+				else
+					GetPlayer()->TextEmote(msg);
+			}
             else if (type == CHAT_MSG_YELL)
-                GetPlayer()->Yell(msg, lang);
+			{
+				sChatLog.ChatMsg(GetPlayer(), msg, type);
+				if (GetPlayer()->isSpectator())
+				{
+					SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+					return;
+				}
+				else
+					GetPlayer()->Yell(msg, lang);
+			}
         } break;
 
         case CHAT_MSG_WHISPER:
@@ -223,6 +257,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
 
             if (msg.empty())
                 break;
+
+			sChatLog.WhisperMsg(GetPlayer(), to, msg);
 
             if (!normalizePlayerName(to))
             {
@@ -276,6 +312,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
             if (msg.empty())
                 break;
 
+			sChatLog.PartyMsg(GetPlayer(), msg);
+
             // if player is in battleground, he cannot say to battleground members by /p
             Group *group = GetPlayer()->GetOriginalGroup();
             // so if player hasn't OriginalGroup and his player->GetGroup() is BG raid, then return
@@ -307,6 +345,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
 
             if (msg.empty())
                 break;
+
+			sChatLog.GuildMsg(GetPlayer(), msg, true);
 
             if (GetPlayer()->GetGuildId())
             {
@@ -345,6 +385,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
             if (msg.empty())
                 break;
 
+			sChatLog.GuildMsg(GetPlayer(), msg, false);
+
             if (GetPlayer()->GetGuildId())
             {
                 Guild *guild = objmgr.GetGuildById(GetPlayer()->GetGuildId());
@@ -373,6 +415,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
 
             if (msg.empty())
                 break;
+
+			sChatLog.RaidMsg(GetPlayer(), msg, type);
 
             // if player is in battleground, he cannot say to battleground members by /ra
             Group *group = GetPlayer()->GetOriginalGroup();
@@ -405,6 +449,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
             if (msg.empty())
                 break;
 
+			sChatLog.RaidMsg(GetPlayer(), msg, type);
+
             // if player is in battleground, he cannot say to battleground members by /ra
             Group *group = GetPlayer()->GetOriginalGroup();
             if (!group && !(group = GetPlayer()->GetGroup()) || group->isBGGroup() || !group->isRaidGroup() || !group->IsLeader(GetPlayer()->GetGUID()))
@@ -428,6 +474,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
 
             if (msg.empty())
                 break;
+
+			sChatLog.RaidMsg(GetPlayer(), msg, type);
 
             Group *group = GetPlayer()->GetGroup();
             if (!group || !group->isRaidGroup() || !(group->IsLeader(GetPlayer()->GetGUID()) || group->IsAssistant(GetPlayer()->GetGUID())) || group->isBGGroup())
@@ -454,6 +502,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
             if (msg.empty())
                 break;
 
+			sChatLog.BattleGroundMsg(GetPlayer(), msg, type);
+
             //battleground raid is always in Player->GetGroup(), never in GetOriginalGroup()
             Group *group = GetPlayer()->GetGroup();
             if (!group || !group->isBGGroup())
@@ -478,6 +528,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
 
             if (msg.empty())
                 break;
+
+			sChatLog.BattleGroundMsg(GetPlayer(), msg, type);
 
             //battleground raid is always in Player->GetGroup(), never in GetOriginalGroup()
             Group *group = GetPlayer()->GetGroup();
@@ -504,6 +556,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
 
             if (msg.empty())
                 break;
+
+			sChatLog.ChatMsg(GetPlayer(), msg, type);
 
             if (ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
             {
@@ -595,6 +649,19 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket & recv_data)
         SendNotification(GetOregonString(LANG_WAIT_BEFORE_SPEAKING),timeStr.c_str());
         return;
     }
+
+	if (_player->isSpectator())
+	{
+		SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+		return;
+	}
+
+	if (_player->isNewChar())
+	{
+		SendNotification("Your chat is DISABLED. You can speak when the played time is more than %u", sWorld.getConfig(CONFIG_NEWCHAR_MUTE_TIME));
+		return;
+	}
+
 
     uint32 text_emote, emoteNum;
     uint64 guid;

@@ -125,6 +125,9 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 
     recvPacket >> targets.ReadForCaster(pUser);
 
+	if (!targets.getUnitTarget())
+        targets.setUnitTarget(ObjectAccessor::GetUnit(*pUser, pUser->GetSelection()));
+
     //Note: If script stop casting it must send appropriate data to client to prevent stuck item in gray state.
     if (!sScriptMgr.ItemUse(pUser,pItem,targets))
     {
@@ -273,6 +276,13 @@ void WorldSession::HandleGameObjectUseOpcode(WorldPacket & recv_data)
     if (!obj)
         return;
 
+	FactionTemplateEntry const* faction = sFactionTemplateStore.LookupEntry(obj->GetGOInfo()->faction);
+    if (faction && 
+		!_player->isGameMaster() &&
+        !faction->IsFriendlyTo(*sFactionTemplateStore.LookupEntry(_player->getFaction())) &&
+        !faction->IsNeutralToAll())
+        return;
+
     if (sScriptMgr.GOHello(_player, obj))
         return;
 
@@ -313,8 +323,8 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
     recvPacket >> targets.ReadForCaster(_player);
 
-    // auto-selection buff level base at target level (in spellInfo)
-    if (Unit* target = targets.getUnitTarget())
+    Unit* target = targets.getUnitTarget();
+    if (target) // auto-selection buff level base at target level (in spellInfo)
     {
         // if rank not found then function return NULL but in explicit cast case original spell can be casted and later failed with appropriate error message
         if (SpellEntry const *actualSpellInfo = spellmgr.SelectAuraRankForPlayerLevel(spellInfo, target->getLevel()))
@@ -326,6 +336,11 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         if (_player->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL) && _player->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL)->m_spellInfo->Id == spellInfo->Id)
             return;
     }
+
+	// When casting a combat spell the unit has to be flagged as initiating combat
+    // No need to check if spell is self-cast because combat spells can only be cast on self with commands
+    if (target && !IsNonCombatSpell(spellInfo))
+        _player->setInitiatingCombat(true);
 
     Spell *spell = new Spell(_player, spellInfo, false);
     spell->m_cast_count = cast_count;                       // set count of casts
@@ -351,7 +366,8 @@ void WorldSession::HandleCancelAuraOpcode(WorldPacket& recvPacket)
         return;
 
     // not allow remove non positive spells and spells with attr SPELL_ATTR_CANT_CANCEL
-    if (!IsPositiveSpell(spellId) || (spellInfo->Attributes & SPELL_ATTR_CANT_CANCEL))
+    // if (!IsPositiveSpell(spellId) || (spellInfo->Attributes & SPELL_ATTR_CANT_CANCEL)) // Проверить, возможно буду отменяться негативные ауры.
+	if (spellInfo->Attributes & SPELL_ATTR_CANT_CANCEL)
         return;
 
     // channeled spell case (it currently casted then)
@@ -368,6 +384,9 @@ void WorldSession::HandleCancelAuraOpcode(WorldPacket& recvPacket)
     }
 
     // non channeled case
+	if (!IsPositiveSpell(spellId))
+		return;
+
     _player->RemoveAurasDueToSpellByCancel(spellId);
 }
 

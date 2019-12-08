@@ -219,8 +219,16 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket & /*recv_data*/)
                 Player* playerGroup = itr->getSource();
                 if (!playerGroup)
                     continue;
-                if (player->GetDistance2d(playerGroup) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-                    playersNear.push_back(playerGroup);
+				if (player->isVip())
+				{
+					if (player->GetDistance2d(playerGroup) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+						playersNear.push_back(playerGroup);
+				}
+				else
+				{
+					if (player->GetDistance2d(playerGroup) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+						playersNear.push_back(playerGroup);
+				}
             }
 
             uint32 money_per_player = uint32((pLoot->gold)/(playersNear.size()));
@@ -253,6 +261,10 @@ void WorldSession::HandleLootOpcode(WorldPacket & recv_data)
         return;
 
     GetPlayer()->SendLoot(guid, LOOT_CORPSE);
+
+	// Interrupt spell casting on loot
+    if (GetPlayer()->IsNonMeleeSpellCasted(false))
+        GetPlayer()->InterruptNonMeleeSpells(false);
 }
 
 void WorldSession::HandleLootReleaseOpcode(WorldPacket & recv_data)
@@ -444,12 +456,23 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket & recv_data)
         return;
 
     // TODO : add some error message?
-    if (_player->GetMapId() != target->GetMapId() || _player->GetDistance(target) > sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-        return;
+	if (_player->isVip())
+	{
+		if (_player->GetMapId() != target->GetMapId() || _player->GetDistance(target) > sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+			return;
+	}
+	else
+	{
+		if (_player->GetMapId() != target->GetMapId() || _player->GetDistance(target) > sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+			return;
+	}
 
     sLog.outDebug("WorldSession::HandleLootMasterGiveOpcode (CMSG_LOOT_MASTER_GIVE, 0x02A3) Target = [%s].", target->GetName());
 
     if (_player->GetLootGUID() != lootguid)
+        return;
+
+	if (_player->GetInstanceId() != target->GetInstanceId())
         return;
 
     Loot *pLoot = NULL;

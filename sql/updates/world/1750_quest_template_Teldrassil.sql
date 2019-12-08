@@ -1,0 +1,1 @@
+UPDATE `world`.`quest_template` SET `OfferRewardText`='Yes, it is time, $c.' WHERE `entry`=6072;

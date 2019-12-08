@@ -114,7 +114,10 @@ namespace Oregon
             if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->isElite())
                 xp_gain *= 2;
 
-            return (uint32)(xp_gain*sWorld.getRate(RATE_XP_KILL));
+			if (pl->isVip())
+				return (uint32)(xp_gain*sWorld.getRate(VIP_RATE_XP_KILL));
+			else
+				return (uint32)(xp_gain*sWorld.getRate(RATE_XP_KILL));
         }
 
         inline uint32 xp_Diff(uint32 lvl)

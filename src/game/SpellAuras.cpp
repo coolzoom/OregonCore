@@ -1307,11 +1307,10 @@ void Aura::TriggerSpell()
                     case 23493:
                     {
                         int32 heal = caster->GetMaxHealth() / 10;
-                        caster->ModifyHealth(heal);
+						caster->ModifyHealth(heal);
                         caster->SendHealSpellLog(caster, 23493, heal);
 
-                        int32 mana = caster->GetMaxPower(POWER_MANA);
-                        if (mana)
+                        if (int32 mana = caster->GetMaxPower(POWER_MANA))
                         {
                             mana /= 10;
                             caster->ModifyPower(POWER_MANA, mana);
@@ -2751,6 +2750,13 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
             default:
                 break;
         }
+
+		/* We need to re-apply any of transform auras:
+           Great example is OHF, when you are in cat form and unshapeshift,
+           you should be a human not your original model */
+        Unit::AuraList const& trans = m_target->GetAurasByType(SPELL_AURA_TRANSFORM);
+        for (Unit::AuraList::const_iterator i = trans.begin(); i != trans.end(); i++)
+            (*i)->ApplyModifier(true, true);
     }
 
     // adding/removing linked auras
@@ -2763,6 +2769,10 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
 
 void Aura::HandleAuraTransform(bool apply, bool Real)
 {
+	// Shapeshifts have higher priority than transforms
+    if (m_target->HasAuraType(SPELL_AURA_MOD_SHAPESHIFT))
+        return;
+
     if (apply)
     {
         // special case (spell specific functionality)
@@ -4639,14 +4649,15 @@ void Aura::HandleModRegen(bool apply, bool /*Real*/)        // eating
         if (m_periodicTimer <= 0)
         {
             m_periodicTimer += 5000;
-            int32 gain = m_target->ModifyHealth(GetModifierValue());
-            Unit *caster = GetCaster();
-            if (caster)
+			int32 gain = m_target->ModifyHealth(GetModifierValue());
+            if (Unit *caster = GetCaster())
             {
-                SpellEntry const *spellProto = GetSpellProto();
-                if (spellProto)
-                    m_target->getHostileRefManager().threatAssist(caster, float(gain) * 0.5f, spellProto);
+                // It's unclear why eating would cause threat, but I've routed it through here never the less
+                if (SpellEntry const *spellProto = GetSpellProto())
+                    caster->HealTargetUnit(m_target, spellProto, GetModifierValue(), false, false);
             }
+			else
+				m_target->ModifyHealth(GetModifierValue());
         }
     }
 
@@ -5533,13 +5544,19 @@ void Aura::HandleSpiritOfRedemption(bool apply, bool Real)
             // set stand state (expected in this form)
             if (!m_target->IsStandState())
                 m_target->SetStandState(UNIT_STAND_STATE_STAND);
+
+			m_target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
         }
 
-        m_target->SetHealth(1);
+        //m_target->SetHealth(1);
+		m_target->SetHealth(m_target->GetMaxHealth());
     }
     // die at aura end
     else
+	{
         m_target->setDeathState(JUST_DIED);
+		m_target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+	}
 }
 
 void Aura::CleanupTriggeredSpells()
@@ -5759,7 +5776,21 @@ void Aura::PeriodicTick()
             DEBUG_LOG("PeriodicTick: %u (TypeId: %u) attacked %u (TypeId: %u) for %u dmg inflicted by %u abs is %u",
                 GUID_LOPART(GetCasterGUID()), GuidHigh2TypeId(GUID_HIPART(GetCasterGUID())), m_target->GetGUIDLow(), m_target->GetTypeId(), pdamage, GetId(),absorb);
 
-            WorldPacket data(SMSG_PERIODICAURALOG, (21+16));// we guess size
+			// Fix SoulLink
+			pdamage = (pdamage <= absorb+resist) ? 0 : (pdamage-absorb-resist);
+
+			// Absorb from tick to log. OC 1627
+            //WorldPacket data(SMSG_PERIODICAURALOG, (21+16));// we guess size
+			Unit* target = m_target;                        // aura can be deleted in DealDamage
+            SpellEntry const* spellProto = GetSpellProto();
+
+            // Set trigger flag
+            uint32 procAttacker = PROC_FLAG_ON_DO_PERIODIC;
+            uint32 procVictim   = PROC_FLAG_ON_TAKE_PERIODIC;
+            uint32 procEx = PROC_EX_INTERNAL_DOT | PROC_EX_NORMAL_HIT;
+            pdamage = (pdamage <= absorb+resist) ? 0 : (pdamage-absorb-resist);
+			
+			WorldPacket data(SMSG_PERIODICAURALOG, (21+16));// we guess size
             data << m_target->GetPackGUID();
             data.appendPackGUID(GetCasterGUID());
             data << uint32(GetId());
@@ -5771,14 +5802,15 @@ void Aura::PeriodicTick()
             data << (uint32)resist;
             m_target->SendMessageToSet(&data,true);
 
-            Unit* target = m_target;                        // aura can be deleted in DealDamage
+			//// Absorb from tick to log. OC 1627
+            /*Unit* target = m_target;                        // aura can be deleted in DealDamage
             SpellEntry const* spellProto = GetSpellProto();
 
             // Set trigger flag
             uint32 procAttacker = PROC_FLAG_ON_DO_PERIODIC;
             uint32 procVictim   = PROC_FLAG_ON_TAKE_PERIODIC;
             uint32 procEx = PROC_EX_INTERNAL_DOT | PROC_EX_NORMAL_HIT;
-            pdamage = (pdamage <= absorb+resist) ? 0 : (pdamage-absorb-resist);
+            pdamage = (pdamage <= absorb+resist) ? 0 : (pdamage-absorb-resist);*/
             if (pdamage)
                 procVictim|=PROC_FLAG_TAKEN_ANY_DAMAGE;
             pCaster->ProcDamageAndSpell(target, procAttacker, procVictim, procEx, pdamage, BASE_ATTACK, spellProto);
@@ -5918,7 +5950,7 @@ void Aura::PeriodicTick()
 
             uint32 heal = pCaster->SpellHealingBonus(spellProto, uint32(new_damage * multiplier), DOT, pCaster);
 
-            int32 gain = pCaster->ModifyHealth(heal);
+			int32 gain = pCaster->ModifyHealth(heal);
             pCaster->getHostileRefManager().threatAssist(pCaster, gain * 0.5f, spellProto);
 
             pCaster->SendHealSpellLog(pCaster, spellProto->Id, heal);
@@ -5932,7 +5964,7 @@ void Aura::PeriodicTick()
                 return;
 
             // heal for caster damage (must be alive)
-            if (m_target != pCaster && GetSpellProto()->SpellVisual == 163 && !pCaster->isAlive())
+            if (!pCaster->isAlive() || (m_target != pCaster && GetSpellProto()->SpellVisual == 163))
                 return;
 
             // ignore non positive values (can be result apply spellmods to aura damage
@@ -5947,21 +5979,22 @@ void Aura::PeriodicTick()
 
             pdamage *= GetStackAmount();
 
-            //pdamage = pCaster->SpellHealingBonus(GetSpellProto(), pdamage, DOT, m_target);
-
             sLog.outDetail("PeriodicTick: %u (TypeId: %u) heal of %u (TypeId: %u) for %u health inflicted by %u",
                 GUID_LOPART(GetCasterGUID()), GuidHigh2TypeId(GUID_HIPART(GetCasterGUID())), m_target->GetGUIDLow(), m_target->GetTypeId(), pdamage, GetId());
 
-            WorldPacket data(SMSG_PERIODICAURALOG, (21+16));// we guess size
-            data << m_target->GetPackGUID();
-            data.appendPackGUID(GetCasterGUID());
-            data << uint32(GetId());
-            data << uint32(1);
-            data << uint32(m_modifier.m_auraname);
-            data << (uint32)pdamage;
-            m_target->SendMessageToSet(&data,true);
-
-            int32 gain = m_target->ModifyHealth(pdamage);
+            // Send log to client only if there the player has been healed
+            if (m_target->GetHealth() < m_target->GetMaxHealth()) // ???
+            {
+                WorldPacket data(SMSG_PERIODICAURALOG, (21+16));// we guess size
+                data << m_target->GetPackGUID();
+                data.appendPackGUID(GetCasterGUID());
+                data << uint32(GetId());
+                data << uint32(1);
+                data << uint32(m_modifier.m_auraname);
+                data << (uint32)pdamage;
+                m_target->SendMessageToSet(&data,true);
+            }
+			int32 gain = m_target->ModifyHealth(pdamage);
 
             // add HoTs to amount healed in bgs
             if (pCaster->GetTypeId() == TYPEID_PLAYER)
@@ -5971,7 +6004,7 @@ void Aura::PeriodicTick()
             //Do check before because m_modifier.auraName can be invalidate by DealDamage.
             bool procSpell = (m_modifier.m_auraname == SPELL_AURA_PERIODIC_HEAL && m_target != pCaster);
 
-            m_target->getHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f, GetSpellProto());
+			m_target->getHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f, GetSpellProto());
 
             Unit* target = m_target;                        // aura can be deleted in DealDamage
             SpellEntry const* spellProto = GetSpellProto();
@@ -6489,15 +6522,11 @@ void Aura::HandlePreventFleeing(bool apply, bool Real)
     if (!Real)
         return;
 
-    Unit::AuraList const& fearAuras = m_target->GetAurasByType(SPELL_AURA_MOD_FEAR);
-    if (!fearAuras.empty())
-    {
-        m_target->SetControlled(!apply, UNIT_STAT_FLEEING);
-        /*if (apply)
-            m_target->SetFeared(false, fearAuras.front()->GetCasterGUID());
-        else
-            m_target->SetFeared(true);*/
-    }
+    if (apply)
+        m_target->RemoveAurasByType(SPELL_AURA_MOD_FEAR);
+
+    m_target->ApplySpellImmune(GetSpellProto()->Id, IMMUNITY_MECHANIC, MECHANIC_FEAR,   apply); // fear
+    m_target->ApplySpellImmune(GetSpellProto()->Id, IMMUNITY_MECHANIC, MECHANIC_HORROR, apply); // horror effects
 }
 
 void Aura::HandleManaShield(bool apply, bool Real)
@@ -6541,14 +6570,14 @@ void Aura::HandleArenaPreparation(bool apply, bool Real)
     if (apply)
     {
         m_target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PREPARATION);
-        m_target->SetFlag(PLAYER_FIELD_BYTES2,PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
-        m_target->SetVisibility(UnitVisibility(m_target->GetVisibility() | VISIBILITY_GROUP_STEALTH));
+        //m_target->SetFlag(PLAYER_FIELD_BYTES2,PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
+        //m_target->SetVisibility(UnitVisibility(m_target->GetVisibility() | VISIBILITY_GROUP_STEALTH));
     }
     else
     {
         m_target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PREPARATION);
-        m_target->RemoveFlag(PLAYER_FIELD_BYTES2,PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
-        m_target->SetVisibility(UnitVisibility(m_target->GetVisibility() & ~VISIBILITY_GROUP_STEALTH));
+        //m_target->RemoveFlag(PLAYER_FIELD_BYTES2,PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW);
+        //m_target->SetVisibility(UnitVisibility(m_target->GetVisibility() & ~VISIBILITY_GROUP_STEALTH));
     }
 }
 

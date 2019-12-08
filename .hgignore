@@ -6,5 +6,8 @@ build/
 *.rej
 *.kdev*
 *.bak
+*.back
 *.patch
 *.diff
+*~
+*.vim

@@ -150,19 +150,19 @@ void WorldSession::QueuePacket(WorldPacket* new_packet)
 // Logging helper for unexpected opcodes
 void WorldSession::LogUnexpectedOpcode(WorldPacket* packet, const char *reason)
 {
-    sLog.outError("SESSION: received unexpected opcode %s (0x%.4X) %s",
+    /*sLog.outError("SESSION: received unexpected opcode %s (0x%.4X) %s",
         LookupOpcodeName(packet->GetOpcode()),
         packet->GetOpcode(),
-        reason);
+        reason);*/
 }
 
 // Logging helper for unexpected opcodes
 void WorldSession::LogUnprocessedTail(WorldPacket *packet)
 {
-    sLog.outError("SESSION: opcode %s (0x%.4X) has unprocessed tail data (read stop at %u from %u)",
+    /*sLog.outError("SESSION: opcode %s (0x%.4X) has unprocessed tail data (read stop at %u from %u)",
         LookupOpcodeName(packet->GetOpcode()),
         packet->GetOpcode(),
-        packet->rpos(),packet->wpos());
+        packet->rpos(),packet->wpos());*/
 }
 
 // Update the WorldSession (triggered by World update)
@@ -278,6 +278,12 @@ bool WorldSession::Update(uint32 diff)
 // Log the player out
 void WorldSession::LogoutPlayer(bool Save)
 {
+	if (!_player)
+		return;
+
+	if (_player->HasAura(6196,0) || _player->HasAura(6197,0))
+		return;
+
     // finish pending transfers before starting the logout
     while (_player && _player->IsBeingTeleportedFar())
         HandleMoveWorldportAckOpcode();

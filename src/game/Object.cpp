@@ -579,16 +579,16 @@ void Object::_BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask 
                     {
                         if (target->isGameMaster())
                         {
-                            if (cinfo->Modelid_A2)
+                            if (cinfo->Modelid_A1)
                                 *data << cinfo->Modelid_A1;
                             else
                                 *data << 17519; // world invisible trigger's model
                         }
                         else
                         {
-                            if (cinfo->Modelid_A2)
+                            /*if (cinfo->Modelid_A2)
                                 *data << cinfo->Modelid_A2;
-                            else
+                            else*/
                                 *data << 11686; // world invisible trigger's model
                         }
                     }
@@ -1760,6 +1760,7 @@ void WorldObject::SetZoneScript()
 Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetType petType, uint32 duration)
 {
     Pet* pet = new Pet(this, petType);
+	SetPetStatus(PET_STATUS_CURRENT);
 
     if (petType == SUMMON_PET && pet->LoadPetFromDB(this, entry))
     {

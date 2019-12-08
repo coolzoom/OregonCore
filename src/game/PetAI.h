@@ -32,7 +32,7 @@ class PetAI : public CreatureAI
 
         explicit PetAI(Creature *c);
 
-        void EnterEvadeMode();
+		void EnterEvadeMode();
         void JustDied(Unit *who) { _stopAttack(); }
 
         void UpdateAI(const uint32);

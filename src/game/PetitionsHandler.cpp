@@ -738,8 +738,18 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket & recv_data)
     uint32 count;
     //if (signs < sWorld.getConfig(CONFIG_MIN_PETITION_SIGNS))
     if (type == 9)
-        count = sWorld.getConfig(CONFIG_MIN_PETITION_SIGNS);
-    else
+	{
+		if (_player->isVip())
+			count = sWorld.getConfig(CONFIG_VIP_MIN_PETITION_SIGNS);
+		else
+			count = sWorld.getConfig(CONFIG_MIN_PETITION_SIGNS);
+	}
+	else if (sWorld.getConfig(CONFIG_ARENA_SINGLE) && type == 5)
+	{
+		count = 0;
+		name = _player->GetName();
+	}
+	else
         count = type-1;
     if (signs < count)
     {

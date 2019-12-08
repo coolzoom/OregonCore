@@ -36,6 +36,9 @@ float ThreatCalcHelper::calcThreat(Unit* pHatedUnit, Unit* pHatingUnit, float pT
 {
     if (pThreatSpell)
     {
+		if (pThreatSpell->AttributesEx & SPELL_ATTR_EX_NO_THREAT)
+            return 0.0f;
+
         if (Player* modOwner = pHatedUnit->GetSpellModOwner())
             modOwner->ApplySpellMod(pThreatSpell->Id, SPELLMOD_THREAT, pThreat);
     }
@@ -430,6 +433,29 @@ float ThreatManager::getThreat(Unit *pVictim, bool pAlsoSearchOfflineList)
     if (ref)
         threat = ref->getThreat();
     return threat;
+}
+
+//============================================================
+
+// Check if the unit was a threat before (is registered in pastThreatList)
+bool ThreatManager::wasUnitThreat(Unit const* unit) const
+{
+    if (unit && !iThreatContainer.iPastEnemyList.empty())
+    {
+        std::vector<Unit*>::const_iterator it = iThreatContainer.iPastEnemyList.begin();
+        for (;it != iThreatContainer.iPastEnemyList.end(); ++it)
+          if ((*it) && unit == (*it))
+              return true;
+    }
+    return false;
+}
+
+// Push new threat in pastEnemyList
+void ThreatManager::pushThreatInMemory(Unit *unit)
+{
+    // Add the entry only if no duplicate found
+    if (!wasUnitThreat(unit))
+        iThreatContainer.iPastEnemyList.push_back(unit);
 }
 
 //============================================================

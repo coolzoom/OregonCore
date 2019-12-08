@@ -354,11 +354,15 @@ void GameObject::Update(uint32 diff)
 
                     if (ok)
                     {
+						if (Player *tmpPlayer = ok->ToPlayer())
+                            if (tmpPlayer->isSpectator())
+                                return;
                         // some traps do not have spell but should be triggered
                         if (goInfo->trap.spellId)
                             CastSpell(ok, goInfo->trap.spellId);
 
-                        m_cooldownTime = time(NULL) + 4;        // 4 seconds
+                        //m_cooldownTime = time(NULL) + 4;        // 4 seconds
+						m_cooldownTime = time(NULL) + (goInfo->trap.cooldown ? goInfo->trap.cooldown : 4);    // default 4 sec cooldown??
 
                         if (owner)  // || goInfo->trap.charges == 1)
                             SetLootState(GO_JUST_DEACTIVATED);
@@ -1382,6 +1386,11 @@ void GameObject::Use(Unit* user)
 
 void GameObject::CastSpell(Unit* target, uint32 spell)
 {
+    if (target)
+        if (Player *tmpPlayer = target->ToPlayer())
+            if (tmpPlayer->isSpectator())
+                return;
+
     //summon world trigger
     Creature *trigger = SummonTrigger(GetPositionX(), GetPositionY(), GetPositionZ(), 0, 1);
     if (!trigger) return;
@@ -1390,12 +1399,12 @@ void GameObject::CastSpell(Unit* target, uint32 spell)
     if (Unit *owner = GetOwner())
     {
         trigger->setFaction(owner->getFaction());
-        trigger->CastSpell(target, spell, true, 0, 0, owner->GetGUID());
+		trigger->CastSpell(target, spell, true, 0, 0, owner ? owner->GetGUID() : NULL);
     }
     else
     {
         trigger->setFaction(14);
-        trigger->CastSpell(target, spell, true, 0, 0, target ? target->GetGUID() : 0);
+        trigger->CastSpell(target, spell, true, 0, 0, target ? target->GetGUID() : NULL);
     }
     //trigger->setDeathState(JUST_DIED);
     //trigger->RemoveCorpse();

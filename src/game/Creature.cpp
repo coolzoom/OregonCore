@@ -253,6 +253,11 @@ void Creature::RemoveCorpse(bool setSpawnTime)
     setDeathState(DEAD);
     UpdateObjectVisibility();
     loot.clear();
+
+	// Unit will forget everyone who has ever attacked it
+    if (Unit* creature_unit = Unit::GetUnit(*this, GetGUID()))
+        creature_unit->clearPastEnemyList();
+
     // Should get removed later, just keep "compatibility" with scripts
     if (setSpawnTime)
         m_respawnTime = time(NULL) + m_respawnDelay;
@@ -1319,10 +1324,23 @@ bool Creature::canSeeOrDetect(Unit const* u, bool detect, bool inVisibleList, bo
 
 bool Creature::canStartAttack(Unit const* who) const
 {
-    if (isCivilian()
-        || !who->isInAccessiblePlaceFor(this)
-        || !canFly() && GetDistanceZ(who) > CREATURE_Z_ATTACK_RANGE
-        || !IsWithinDistInMap(who, GetAttackDistance(who)))
+    if (isCivilian())
+        return false;
+
+    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE))
+        return false;
+
+    // Do not attack non-combat pets
+    if (who->GetTypeId() == TYPEID_UNIT && who->GetCreatureType() == CREATURE_TYPE_NON_COMBAT_PET)
+        return false;
+
+    if (!canFly() && (GetDistanceZ(who) > CREATURE_Z_ATTACK_RANGE + m_CombatDistance))
+        return false;
+
+    if (!who->isInAccessiblePlaceFor(this))
+        return false;
+
+    if (!IsWithinDistInMap(who, GetAttackDistance(who)))
         return false;
 
     if (!canAttack(who, false))
@@ -1428,6 +1446,9 @@ void Creature::setDeathState(DeathState s)
         i_motionMaster.Initialize();
         SetMeleeDamageSchool(SpellSchools(cinfo->dmgschool));
         LoadCreaturesAddon(true);
+
+		// Prevents the creature from re-spawning at the location of it's death
+        GetMap()->CreatureRespawnRelocation(this);
     }
 }
 

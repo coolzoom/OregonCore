@@ -180,6 +180,7 @@ BattleGround::BattleGround()
 
     m_PrematureCountDown = false;
     m_PrematureCountDown = 0;
+	m_TimeElapsedSinceBeggining = 0;
 
     m_HonorMode = BG_NORMAL;
 
@@ -234,6 +235,7 @@ void BattleGround::Update(time_t diff)
         return;
 
     m_StartTime += diff;
+	m_TimeElapsedSinceBeggining += diff;
 
     // WorldPacket data;
 
@@ -470,6 +472,33 @@ void BattleGround::Update(time_t diff)
             // do not change any battleground's private variables
         }
     }
+
+	if (isArena() && sBattleGroundMgr.GetArenaEndAfterTime() && m_TimeElapsedSinceBeggining > sBattleGroundMgr.GetArenaEndAfterTime() && GetStatus() == STATUS_IN_PROGRESS)
+    {
+        if (!sBattleGroundMgr.IsArenaEndAfterAlwaysDraw())
+        {
+            if(GetAlivePlayersCountByTeam(HORDE) > GetAlivePlayersCountByTeam(ALLIANCE))
+            {
+                EndBattleGround(HORDE);
+                return;
+            }
+            else if (GetAlivePlayersCountByTeam(HORDE) < GetAlivePlayersCountByTeam(ALLIANCE))
+            {
+                EndBattleGround(ALLIANCE);
+                return;
+            }
+			else
+			{
+				EndBattleGround(0);
+				return;
+			}
+        }
+		else
+		{
+	        EndBattleGround(0);
+		    return;
+		}
+    }
 }
 
 void BattleGround::SetTeamStartLoc(uint32 TeamID, float X, float Y, float Z, float O)
@@ -615,8 +644,8 @@ void BattleGround::RewardHonorToTeam(uint32 Honor, uint32 TeamID)
             continue;
         }
 
-        uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+		uint32 team = plr->GetBGTeam();
+		if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
             UpdatePlayerScore(plr, SCORE_BONUS_HONOR, Honor);
@@ -644,7 +673,7 @@ void BattleGround::RewardReputationToTeam(uint32 faction_id, uint32 Reputation, 
         }
 
         uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+        if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
             plr->ModifyFactionReputation(factionEntry, Reputation);
@@ -715,10 +744,28 @@ void BattleGround::EndBattleGround(uint32 winner)
         }
         if (winner_arena_team && loser_arena_team)
         {
+			// ѕодготовка данных дл€ антислива
+			Player *capitanFirstTeam = objmgr.GetPlayer(winner_arena_team->GetCaptain());
+			Player *capitanSecondTeam = objmgr.GetPlayer(loser_arena_team->GetCaptain());
+			std::string FirstCapitanIP = capitanFirstTeam->GetSession()->GetRemoteAddress();
+			std::string SecondCapitanIP = capitanSecondTeam->GetSession()->GetRemoteAddress();
+
             loser_rating = loser_arena_team->GetStats().rating;
             winner_rating = winner_arena_team->GetStats().rating;
-            int32 winner_change = winner_arena_team->WonAgainst(loser_rating);
-            int32 loser_change = loser_arena_team->LostAgainst(winner_rating);
+
+			int32 winner_change;
+			int32 loser_change;
+			// ≈сли IP капитанов совпадают - проиграли обе команды
+			if (FirstCapitanIP == SecondCapitanIP && sWorld.getConfig(CONFIG_ARENA_ANTIFARM))
+			{
+				winner_change = winner_arena_team->LostAgainst(loser_rating);
+				loser_change = loser_arena_team->LostAgainst(winner_rating);
+			}
+			else
+			{
+				winner_change = winner_arena_team->WonAgainst(loser_rating);
+				loser_change = loser_arena_team->LostAgainst(winner_rating);
+			}
             sLog.outDebug("--- Winner rating: %u, Loser rating: %u, Winner change: %u, Losser change: %u ---", winner_rating, loser_rating, winner_change, loser_change);
             if (winner == ALLIANCE)
             {
@@ -787,30 +834,117 @@ void BattleGround::EndBattleGround(uint32 winner)
         // per player calculation
         if (isArena() && isRated() && winner_arena_team && loser_arena_team)
         {
-            if (team == winner)
-                winner_arena_team->MemberWon(plr,loser_rating);
-            else
-                loser_arena_team->MemberLost(plr,winner_rating);
+			// ѕодготовка данных дл€ антислива
+			Player *capitanFirstTeam = objmgr.GetPlayer(winner_arena_team->GetCaptain());
+			Player *capitanSecondTeam = objmgr.GetPlayer(loser_arena_team->GetCaptain());
+			std::string FirstCapitanIP = capitanFirstTeam->GetSession()->GetRemoteAddress();
+			std::string SecondCapitanIP = capitanSecondTeam->GetSession()->GetRemoteAddress();
+			std::string PlayerIP = plr->GetSession()->GetRemoteAddress();
+
+			// ≈сли IP капитанов совпадают, то считаетс€ что игрок проиграл
+			if (FirstCapitanIP == SecondCapitanIP && sWorld.getConfig(CONFIG_ARENA_ANTIFARM))
+			{
+				if (team == winner)
+					winner_arena_team->MemberLost(plr,loser_rating);
+				else
+					loser_arena_team->MemberLost(plr,winner_rating);
+			}
+			// ≈сли игрок не капитан первой команды, но его IP совпадает с капитаном первой команды, то считаетс€ что игрок проиграл
+			else if (plr != capitanFirstTeam && PlayerIP == FirstCapitanIP && sWorld.getConfig(CONFIG_ARENA_ANTIFARM))
+			{
+				if (team == winner)
+					winner_arena_team->MemberLost(plr,loser_rating);
+				else
+					loser_arena_team->MemberLost(plr,winner_rating);
+			}
+			// јналогично дл€ капитана второй команды
+			else if (plr != capitanSecondTeam && PlayerIP == SecondCapitanIP && sWorld.getConfig(CONFIG_ARENA_ANTIFARM))
+			{
+				if (team == winner)
+					winner_arena_team->MemberLost(plr,loser_rating);
+				else
+					loser_arena_team->MemberLost(plr,winner_rating);
+			}
+			// ¬ итоге, если IP капитанов не совпадают, игрок не €вл€етс€ капитаном и его IP не совпадает с IP капитанов.
+			// ¬ случаи, если игрок €вл€етс€ капитаном команды, он получит рейтинг если перва€ проверка не сработает.
+			// “.е. в случаи слива при разных IP капитанов, но совпадени€х в IP с участниками - капитаны получат рейтинг.
+			// —лив становитс€ крайне неудобен.
+			else
+			{
+				if (team == winner)
+					winner_arena_team->MemberWon(plr,loser_rating);
+				else
+					loser_arena_team->MemberLost(plr,winner_rating);
+			}
+			
         }
+
+		uint32 nITEM_WINNER_COUNT;
+		uint32 nITEM_LOSER_COUNT;
+		/*switch(GetTypeID())
+		{
+			case BATTLEGROUND_AV:
+				nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_WIN_COUNT);
+				nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_LOSE_COUNT);
+				break;
+			case BATTLEGROUND_WS:
+				nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_WIN_COUNT);
+				nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_LOSE_COUNT);
+				break;
+			case BATTLEGROUND_AB:
+				nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_WIN_COUNT);
+				nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_LOSE_COUNT);
+				break;
+			case BATTLEGROUND_EY:
+				nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_WIN_COUNT);
+				nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_LOSE_COUNT);
+				break;
+		}*/
+		if (GetTypeID() == BATTLEGROUND_AV)
+		{
+			nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_WIN_COUNT);
+			nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_LOSE_COUNT);
+		}
+		if (GetTypeID() == BATTLEGROUND_WS)
+		{
+			nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_WIN_COUNT);
+			nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_LOSE_COUNT);
+		}
+		if (GetTypeID() == BATTLEGROUND_AB)
+		{
+			nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_WIN_COUNT);
+			nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_LOSE_COUNT);
+		}
+		if (GetTypeID() == BATTLEGROUND_EY)
+		{
+			nITEM_WINNER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_WIN_COUNT);
+			nITEM_LOSER_COUNT = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_LOSE_COUNT);
+		}
+
+		if (plr->isVip())
+		{
+			nITEM_WINNER_COUNT += sWorld.getConfig(CONFIG_VIP_BG_MARKS_WIN);
+			nITEM_LOSER_COUNT += sWorld.getConfig(CONFIG_VIP_BG_MARKS_LOSE);
+		}
 
         if (team == winner)
         {
-            RewardMark(plr,ITEM_WINNER_COUNT);
+            RewardMark(plr,nITEM_WINNER_COUNT);
             UpdatePlayerScore(plr, SCORE_BONUS_HONOR, 20);
             RewardQuest(plr);
         }
         else if (winner != 0)
         {
-            RewardMark(plr,ITEM_LOSER_COUNT);
+            RewardMark(plr,nITEM_LOSER_COUNT);
         }
         else if (winner == 0)
         {
             if (sWorld.getConfig(CONFIG_BATTLEGROUND_PREMATURE_REWARD))
             {
                 if (almost_winning_team == team)                  // player's team had more points
-                    RewardMark(plr,ITEM_WINNER_COUNT);
+                    RewardMark(plr,nITEM_WINNER_COUNT);
                 else
-                    RewardMark(plr,ITEM_LOSER_COUNT);            // if scores were the same, each team gets 1 mark.
+                    RewardMark(plr,nITEM_LOSER_COUNT);            // if scores were the same, each team gets 1 mark.
             }
         }
 
@@ -871,20 +1005,21 @@ void BattleGround::RewardMark(Player *plr,uint32 count)
     if (!plr || !count)
         return;
 
-    BattleGroundMarks mark;
+    //BattleGroundMarks mark; Ќе пон€тно зачем брали тип переменной как BattleGroundMarks, ведь переменна€ представлена цифрой и далее используетс€ как uint32
+	uint32 mark;
     switch(GetTypeID())
     {
         case BATTLEGROUND_AV:
-            mark = ITEM_AV_MARK_OF_HONOR;
+            mark = sWorld.getConfig(CONFIG_BATTLEGROUND_AV_MARK);
             break;
         case BATTLEGROUND_WS:
-            mark = ITEM_WS_MARK_OF_HONOR;
+            mark = sWorld.getConfig(CONFIG_BATTLEGROUND_WS_MARK);
             break;
         case BATTLEGROUND_AB:
-            mark = ITEM_AB_MARK_OF_HONOR;
+            mark = sWorld.getConfig(CONFIG_BATTLEGROUND_AB_MARK);
             break;
         case BATTLEGROUND_EY:
-            mark = ITEM_EY_MARK_OF_HONOR;
+            mark = sWorld.getConfig(CONFIG_BATTLEGROUND_EY_MARK);
             break;
         default:
             return;
@@ -1175,6 +1310,7 @@ void BattleGround::AddPlayer(Player *plr)
     sBattleGroundMgr.BuildPlayerJoinedBattleGroundPacket(&data, plr);
     SendPacketToTeam(team, &data, plr, false);
 
+	plr->SetSpectator(false);
     plr->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
     plr->CombatStop();
     plr->getHostileRefManager().deleteReferences();
@@ -1184,6 +1320,7 @@ void BattleGround::AddPlayer(Player *plr)
     {
         plr->RemoveArenaSpellCooldowns();
         plr->RemoveArenaAuras();
+		plr->RemoveAurasDueToSpell(28509);
         plr->RemoveAllEnchantments(TEMP_ENCHANTMENT_SLOT, true);
         if (team == ALLIANCE)                                // gold
         {
@@ -1237,11 +1374,20 @@ void BattleGround::EventPlayerLoggedOut(Player* player)
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
         if (isBattleGround())
+		{
             EventPlayerDroppedFlag(player);
+			player->LeaveBattleground();
+		}
     }
 
     if (isArena())
-        player->LeaveBattleground();
+	{
+		player->LeaveBattleground();
+		if (player->isSpectator())
+		{
+			player->SetSpectator(false);
+		}
+	}
 }
 
 /* This method should be called only once ... it adds pointer to queue */
@@ -1767,7 +1913,7 @@ void BattleGround::HandleKillPlayer(Player *player, Player *killer)
             if (!plr || plr == killer)
                 continue;
 
-            if (plr->GetTeam() == killer->GetTeam() && plr->IsAtGroupRewardDistance(player))
+            if (plr->GetBGTeam() == killer->GetBGTeam() && plr->IsAtGroupRewardDistance(player))
                 UpdatePlayerScore(plr, SCORE_HONORABLE_KILLS, 1);
         }
     }
@@ -1862,10 +2008,20 @@ void BattleGround::HandleKillUnit(Creature * /*creature*/, Player * /*killer*/)
 
 void BattleGround::CheckArenaWinConditions()
 {
-    if (!GetAlivePlayersCountByTeam(ALLIANCE) && GetPlayersCountByTeam(HORDE))
-        EndBattleGround(HORDE);
-    else if (GetPlayersCountByTeam(ALLIANCE) && !GetAlivePlayersCountByTeam(HORDE))
-        EndBattleGround(ALLIANCE);
+	if (!GetAlivePlayersCountByTeam(ALLIANCE) && GetPlayersCountByTeam(HORDE))
+	{
+		if (sWorld.getConfig(CONFIG_ARENA_ANTIFARM) && GetStatus() == STATUS_WAIT_JOIN)
+			EndBattleGround(0);
+		else
+			EndBattleGround(HORDE);
+	}
+	else if (GetPlayersCountByTeam(ALLIANCE) && !GetAlivePlayersCountByTeam(HORDE))
+	{
+		if (sWorld.getConfig(CONFIG_ARENA_ANTIFARM) && GetStatus() == STATUS_WAIT_JOIN)
+			EndBattleGround(0);
+		else
+			EndBattleGround(ALLIANCE);
+	}
 }
 
 WorldSafeLocsEntry const* BattleGround::GetClosestGraveYard(Player* player)

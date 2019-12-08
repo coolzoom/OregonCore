@@ -28,7 +28,10 @@ void ArenaTeamMember::ModifyPersonalRating(Player* plr, int32 mod, uint32 slot)
     else
         personal_rating += mod;
     if (plr)
+	{
         plr->SetArenaTeamInfoField(slot, ARENA_TEAM_PERSONAL_RATING, personal_rating);
+		plr->SaveToDB();
+	}
 }
 
 ArenaTeam::ArenaTeam()
@@ -45,7 +48,8 @@ ArenaTeam::ArenaTeam()
     m_stats.games_week    = 0;
     m_stats.games_season  = 0;
     m_stats.rank          = 0;
-    m_stats.rating        = ARENA_NEW_TEAM_RATING;
+    //m_stats.rating        = ARENA_NEW_TEAM_RATING;
+	m_stats.rating        = sWorld.getConfig(CONFIG_ARENA_START_RATING);
     m_stats.wins_week     = 0;
     m_stats.wins_season   = 0;
 }
@@ -139,7 +143,8 @@ bool ArenaTeam::AddMember(const uint64& playerGuid)
     newmember.games_week        = 0;
     newmember.wins_season       = 0;
     newmember.wins_week         = 0;
-    newmember.personal_rating   = ARENA_NEW_PERSONAL_RATING;
+    //newmember.personal_rating   = ARENA_NEW_PERSONAL_RATING;
+	newmember.personal_rating   = sWorld.getConfig(CONFIG_ARENA_START_RATING);
     m_members.push_back(newmember);
 
     CharacterDatabase.PExecute("INSERT INTO arena_team_member (arenateamid, guid, personal_rating) VALUES ('%u', '%u', '%u')", m_TeamId, GUID_LOPART(newmember.guid), newmember.personal_rating);
@@ -523,6 +528,8 @@ uint32 ArenaTeam::GetPoints(uint32 MemberRating)
         points *= 0.76f;
     else if (m_Type == ARENA_TEAM_3v3)
         points *= 0.88f;
+	else if (sWorld.getConfig(CONFIG_ARENA_SINGLE) && m_Type == ARENA_TEAM_5v5)
+		points *= sWorld.getConfig(CONFIG_ARENA_SINGLE_AP);
 
     return (uint32) points;
 }
@@ -559,14 +566,34 @@ int32 ArenaTeam::WonAgainst(uint32 againstRating)
     // 'chance' calculation - to beat the opponent
     float chance = GetChanceAgainst(m_stats.rating, againstRating);
     // calculate the rating modification (ELO system with k=32)
-    int32 mod = (int32)floor(32.0f * (1.0f - chance));
-    // modify the team stats accordingly
-    FinishGame(mod);
-    m_stats.wins_week += 1;
-    m_stats.wins_season += 1;
+	if (sWorld.getConfig(CONFIG_ARENA_FIXED_CHANGE_RATING))
+	{
+		int32 mod = sWorld.getConfig(CONFIG_ARENA_CHANGE_RATING_COUNT);
+		// modify the team stats accordingly
+		FinishGame(mod);
+		m_stats.wins_week += 1;
+		m_stats.wins_season += 1;
 
-    // return the rating change, used to display it on the results screen
-    return mod;
+		// return the rating change, used to display it on the results screen
+		return mod;
+	}
+	else
+	{
+		int32 mod = (int32)floor(32.0f * (1.0f - chance));
+		// modify the team stats accordingly
+		m_stats.wins_week += 1;
+		m_stats.wins_season += 1;
+
+		if (sWorld.getConfig(CONFIG_ARENA_MIN_CHANGE_RATING))
+		{
+			if (mod < sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT))
+				mod = sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT);
+		}
+		FinishGame(mod);
+
+		// return the rating change, used to display it on the results screen
+		return mod;
+	}
 }
 
 int32 ArenaTeam::LostAgainst(uint32 againstRating)
@@ -575,12 +602,30 @@ int32 ArenaTeam::LostAgainst(uint32 againstRating)
     // 'chance' calculation - to loose to the opponent
     float chance = GetChanceAgainst(m_stats.rating, againstRating);
     // calculate the rating modification (ELO system with k=32)
-    int32 mod = (int32)ceil(32.0f * (0.0f - chance));
-    // modify the team stats accordingly
-    FinishGame(mod);
+	if (sWorld.getConfig(CONFIG_ARENA_FIXED_CHANGE_RATING))
+	{
+		int32 mod = (-1)*sWorld.getConfig(CONFIG_ARENA_CHANGE_RATING_COUNT);
+		// modify the team stats accordingly
+		FinishGame(mod);
 
-    // return the rating change, used to display it on the results screen
-    return mod;
+		// return the rating change, used to display it on the results screen
+		return mod;
+	}
+	else
+	{
+		int32 mod = (int32)ceil(32.0f * (0.0f - chance));
+		// modify the team stats accordingly
+
+		if (sWorld.getConfig(CONFIG_ARENA_MIN_CHANGE_RATING))
+		{
+			if (mod > (-1)*sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT))
+				mod = (-1)*sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT);
+		}
+
+		FinishGame(mod);
+		// return the rating change, used to display it on the results screen
+		return mod;
+	}
 }
 
 void ArenaTeam::MemberLost(Player * plr, uint32 againstRating)
@@ -591,16 +636,37 @@ void ArenaTeam::MemberLost(Player * plr, uint32 againstRating)
         if (itr->guid == plr->GetGUID())
         {
             // update personal rating
-            float chance = GetChanceAgainst(itr->personal_rating, againstRating);
-            int32 mod = (int32)ceil(32.0f * (0.0f - chance));
-            itr->ModifyPersonalRating(plr, mod, GetSlot());
-            // update personal played stats
-            itr->games_week += 1;
-            itr->games_season += 1;
-            // update the unit fields
-            plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_WEEK,  itr->games_week);
-            plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_SEASON,  itr->games_season);
-            return;
+			if (sWorld.getConfig(CONFIG_ARENA_FIXED_CHANGE_RATING))
+			{
+				float chance = GetChanceAgainst(itr->personal_rating, againstRating);
+				int32 mod = (-1)*sWorld.getConfig(CONFIG_ARENA_CHANGE_RATING_COUNT);
+				itr->ModifyPersonalRating(plr, mod, GetSlot());
+				// update personal played stats
+				itr->games_week += 1;
+				itr->games_season += 1;
+				// update the unit fields
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_WEEK,  itr->games_week);
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_SEASON,  itr->games_season);
+				return;
+			}
+			else
+			{
+				float chance = GetChanceAgainst(itr->personal_rating, againstRating);
+				int32 mod = (int32)ceil(32.0f * (0.0f - chance));
+				if (sWorld.getConfig(CONFIG_ARENA_MIN_CHANGE_RATING))
+				{
+					if (mod > (-1)*sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT))
+						mod = (-1)*sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT);
+				}
+				itr->ModifyPersonalRating(plr, mod, GetSlot());
+				// update personal played stats
+				itr->games_week += 1;
+				itr->games_season += 1;
+				// update the unit fields
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_WEEK,  itr->games_week);
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_SEASON,  itr->games_season);
+				return;
+			}
         }
     }
 }
@@ -613,16 +679,37 @@ void ArenaTeam::OfflineMemberLost(uint64 guid, uint32 againstRating)
         if (itr->guid == guid)
         {
             // update personal rating
-            float chance = GetChanceAgainst(itr->personal_rating, againstRating);
-            int32 mod = (int32)ceil(32.0f * (0.0f - chance));
+			if (sWorld.getConfig(CONFIG_ARENA_FIXED_CHANGE_RATING))
+			{
+				float chance = GetChanceAgainst(itr->personal_rating, againstRating);
+				int32 mod = (-1)*sWorld.getConfig(CONFIG_ARENA_CHANGE_RATING_COUNT);
 
-            int32 rating = int32(itr->personal_rating) + mod;
-            itr->personal_rating = rating < 0 ? 0 : rating;
+				int32 rating = int32(itr->personal_rating) + mod;
+				itr->personal_rating = rating < 0 ? 0 : rating;
 
-            // update personal played stats
-            itr->games_week +=1;
-            itr->games_season +=1;
-            return;
+				// update personal played stats
+				itr->games_week +=1;
+				itr->games_season +=1;
+				return;
+			}
+			else
+			{
+				float chance = GetChanceAgainst(itr->personal_rating, againstRating);
+				int32 mod = (int32)ceil(32.0f * (0.0f - chance));
+				if (sWorld.getConfig(CONFIG_ARENA_MIN_CHANGE_RATING))
+				{
+					if (mod > (-1)*sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT))
+						mod = (-1)*sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT);
+				}
+
+				int32 rating = int32(itr->personal_rating) + mod;
+				itr->personal_rating = rating < 0 ? 0 : rating;
+
+				// update personal played stats
+				itr->games_week +=1;
+				itr->games_season +=1;
+				return;
+			}
         }
     }
 }
@@ -634,19 +721,43 @@ void ArenaTeam::MemberWon(Player * plr, uint32 againstRating)
     {
         if (itr->guid == plr->GetGUID())
         {
-            // update personal rating
-            float chance = GetChanceAgainst(itr->personal_rating, againstRating);
-            int32 mod = (int32)floor(32.0f * (1.0f - chance));
-            itr->ModifyPersonalRating(plr, mod, GetSlot());
-            // update personal stats
-            itr->games_week +=1;
-            itr->games_season +=1;
-            itr->wins_season += 1;
-            itr->wins_week += 1;
-            // update unit fields
-            plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_WEEK, itr->games_week);
-            plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_SEASON, itr->games_season);
-            return;
+			if (sWorld.getConfig(CONFIG_ARENA_FIXED_CHANGE_RATING))
+			{
+				// update personal rating
+				float chance = GetChanceAgainst(itr->personal_rating, againstRating);
+				int32 mod = sWorld.getConfig(CONFIG_ARENA_CHANGE_RATING_COUNT);
+				itr->ModifyPersonalRating(plr, mod, GetSlot());
+				// update personal stats
+				itr->games_week +=1;
+				itr->games_season +=1;
+				itr->wins_season += 1;
+				itr->wins_week += 1;
+				// update unit fields
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_WEEK, itr->games_week);
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_SEASON, itr->games_season);
+				return;
+			}
+			else
+			{
+				// update personal rating
+				float chance = GetChanceAgainst(itr->personal_rating, againstRating);
+				int32 mod = (int32)floor(32.0f * (1.0f - chance));
+				if (sWorld.getConfig(CONFIG_ARENA_MIN_CHANGE_RATING))
+				{
+					if (mod < sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT))
+						mod = sWorld.getConfig(CONFIG_ARENA_MIN_RATING_COUNT);
+				}
+				itr->ModifyPersonalRating(plr, mod, GetSlot());
+				// update personal stats
+				itr->games_week +=1;
+				itr->games_season +=1;
+				itr->wins_season += 1;
+				itr->wins_week += 1;
+				// update unit fields
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_WEEK, itr->games_week);
+				plr->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_GAMES_SEASON, itr->games_season);
+				return;
+			}
         }
     }
 }

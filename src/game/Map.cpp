@@ -2651,7 +2651,11 @@ void BattleGroundMap::RemoveAllPlayers()
         for (MapRefManager::iterator itr = m_mapRefManager.begin(); itr != m_mapRefManager.end(); ++itr)
             if (Player* plr = itr->getSource())
                 if (!plr->IsBeingTeleportedFar())
+				{
                     plr->TeleportTo(plr->GetBattleGroundEntryPoint());
+					if (plr->isSpectator())
+						plr->SetSpectator(false);
+				}
 
 }
 

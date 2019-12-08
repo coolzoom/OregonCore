@@ -573,6 +573,27 @@ ChatCommand * ChatHandler::getCommandTable()
         { NULL,             0,                  false, NULL,                                                "", NULL }
     };
 
+	// VIP system
+	static ChatCommand vipCommandTable[] =
+	{
+		{ "add",			SEC_ADMINISTRATOR,	true,	&ChatHandler::HandleVipAddCommand,					"", NULL},
+		{ "delete",			SEC_ADMINISTRATOR,	true,	&ChatHandler::HandleVipDeleteCommand,				"", NULL},
+		{ "",				SEC_PLAYER,			false,	&ChatHandler::HandleVipCommand,						"", NULL},
+		{ NULL,				0,					false,	NULL,												"", NULL}
+	};
+
+	// Referral system
+	static ChatCommand refCommandTable[] =
+	{
+		{ "add",			SEC_PLAYER,			false,	&ChatHandler::HandleReferralAddCommand,				"", NULL},
+		{ "info",			SEC_PLAYER,			false,	&ChatHandler::HandleReferralInfoCommand,			"", NULL},
+		{ "delete",			SEC_ADMINISTRATOR,	true,	&ChatHandler::HandleReferralDeleteCommand,			"", NULL},
+		{ "first",			SEC_ADMINISTRATOR,	true,	&ChatHandler::HandleReferralPresentFirstCommand,	"", NULL},
+		{ "second",			SEC_ADMINISTRATOR,	true,	&ChatHandler::HandleReferralPresentSecondCommand,	"", NULL},
+		{ "third",			SEC_ADMINISTRATOR,	true,	&ChatHandler::HandleReferralPresentThirdCommand,	"", NULL},
+		{ NULL,				0,					false,	NULL,												"", NULL}
+	};
+
     static ChatCommand commandTable[] =
     {
         { "account",        SEC_PLAYER,         true,  NULL,                                           "", accountCommandTable  },
@@ -620,7 +641,8 @@ ChatCommand * ChatHandler::getCommandTable()
         { "commands",       SEC_PLAYER,         true,  &ChatHandler::HandleCommandsCommand,            "", NULL },
         { "demorph",        SEC_GAMEMASTER,     false, &ChatHandler::HandleDeMorphCommand,             "", NULL },
         { "die",            SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDieCommand,                 "", NULL },
-        { "revive",         SEC_ADMINISTRATOR,  true, &ChatHandler::HandleReviveCommand,               "", NULL },
+        { "kill",           SEC_ADMINISTRATOR,  false, &ChatHandler::HandleKillCommand,                "", NULL },
+        { "revive",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleReviveCommand,              "", NULL },
         { "dismount",       SEC_PLAYER,         false, &ChatHandler::HandleDismountCommand,            "", NULL },
         { "gps",            SEC_MODERATOR,      false, &ChatHandler::HandleGPSCommand,                 "", NULL },
         { "guid",           SEC_GAMEMASTER,     false, &ChatHandler::HandleGUIDCommand,                "", NULL },
@@ -638,6 +660,7 @@ ChatCommand * ChatHandler::getCommandTable()
         { "baninfo",        SEC_ADMINISTRATOR,  false, NULL,                                           "", baninfoCommandTable },
         { "banlist",        SEC_ADMINISTRATOR,  true,  NULL,                                           "", banlistCommandTable },
         { "start",          SEC_PLAYER,         false, &ChatHandler::HandleStartCommand,               "", NULL },
+		{ "spstop",			SEC_PLAYER,			true,  &ChatHandler::HandleSpectatorStopCommand,	   "", NULL },
         { "taxicheat",      SEC_MODERATOR,      false, &ChatHandler::HandleTaxiCheatCommand,           "", NULL },
         { "allowmove",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleAllowMovementCommand,       "", NULL },
         { "linkgrave",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleLinkGraveCommand,           "", NULL },
@@ -678,6 +701,9 @@ ChatCommand * ChatHandler::getCommandTable()
         { "unpossess",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleUnPossessCommand,           "", NULL },
         { "bindsight",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleBindSightCommand,           "", NULL },
         { "unbindsight",    SEC_ADMINISTRATOR,  false, &ChatHandler::HandleUnbindSightCommand,         "", NULL },
+		{ "vip",			SEC_PLAYER,			true,  &ChatHandler::HandleVipCommand,				   "", vipCommandTable },
+		{ "ref",			SEC_PLAYER,			false, NULL,										   "", refCommandTable },
+		{ "bfpt",			SEC_PLAYER,			false, &ChatHandler::HandleBfptCommand,				   "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };

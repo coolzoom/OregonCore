@@ -21,6 +21,15 @@
 
 #ifdef SCRIPTS
 
+//custom
+void AddSC_npc_titles();
+void AddSC_npc_transmogrification();
+void AddSC_npc_arena_spectator();
+void AddSC_npc_exchanger();
+void AddSC_npc_item_exchanger();
+void AddSC_npc_customer();
+void AddSC_npc_arena_1v1();
+
 //examples
 //void AddSC_custom_example();
 //void AddSC_custom_gossip_codebox();
@@ -177,6 +186,7 @@ void AddSC_boss_eredar_twins();
 void AddSC_boss_muru();
 void AddSC_boss_kiljaeden();
 void AddSC_sunwell_plateau();
+void AddSC_npc_sunwell_boss();
 void AddSC_boss_archaedas();                 //Uldaman
 void AddSC_boss_ironaya();
 void AddSC_uldaman();
@@ -393,6 +403,16 @@ void AddSC_onevents();
 void AddScripts()
 {
 #ifdef SCRIPTS
+
+    //Custom
+    AddSC_npc_titles();
+	AddSC_npc_transmogrification();
+	AddSC_npc_arena_spectator();
+	AddSC_npc_exchanger();
+	AddSC_npc_item_exchanger();
+	AddSC_npc_customer();
+	AddSC_npc_arena_1v1();
+
 //    AddSC_custom_example();
 //    AddSC_custom_gossip_codebox();
 //    AddSC_test();
@@ -546,6 +566,7 @@ void AddScripts()
     AddSC_boss_muru();
     AddSC_boss_kiljaeden();
     AddSC_sunwell_plateau();
+	AddSC_npc_sunwell_boss();
     AddSC_boss_archaedas();                 //Uldaman
     AddSC_boss_ironaya();
     AddSC_uldaman();

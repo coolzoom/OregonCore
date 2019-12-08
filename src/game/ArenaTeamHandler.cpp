@@ -199,6 +199,9 @@ void WorldSession::HandleArenaTeamLeaveOpcode(WorldPacket & recv_data)
     uint32 ArenaTeamId;                                     // arena team id
     recv_data >> ArenaTeamId;
 
+    if (GetPlayer()->InArena())
+        return;
+
     ArenaTeam *at = objmgr.GetArenaTeamById(ArenaTeamId);
     if (!at)
         return;

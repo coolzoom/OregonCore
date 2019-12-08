@@ -546,11 +546,22 @@ void Group::GroupLoot(const uint64& playerGUID, Loot *loot, WorldObject* object)
                     continue;
                 if (i->AllowedForPlayer(member))
                 {
-                    if (member->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-                    {
-                        r->playerVote[member->GetGUID()] = ROLL_NOT_EMITED_YET;
-                        ++r->totalPlayersRolling;
-                    }
+					if (member->isVip())
+					{
+						if (member->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+						{
+							r->playerVote[member->GetGUID()] = ROLL_NOT_EMITED_YET;
+							++r->totalPlayersRolling;
+						}
+					}
+					else
+					{
+						if (member->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+						{
+							r->playerVote[member->GetGUID()] = ROLL_NOT_EMITED_YET;
+							++r->totalPlayersRolling;
+						}
+					}
                 }
             }
 
@@ -595,11 +606,22 @@ void Group::NeedBeforeGreed(const uint64& playerGUID, Loot *loot, WorldObject* o
 
                 if (playerToRoll->CanUseItem(item) && i->AllowedForPlayer(playerToRoll))
                 {
-                    if (playerToRoll->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-                    {
-                        r->playerVote[playerToRoll->GetGUID()] = ROLL_NOT_EMITED_YET;
-                        ++r->totalPlayersRolling;
-                    }
+					if (playerToRoll->isVip())
+					{
+						if (playerToRoll->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+						{
+							r->playerVote[playerToRoll->GetGUID()] = ROLL_NOT_EMITED_YET;
+							++r->totalPlayersRolling;
+						}
+					}
+					else
+					{
+						if (playerToRoll->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+						{
+							r->playerVote[playerToRoll->GetGUID()] = ROLL_NOT_EMITED_YET;
+							++r->totalPlayersRolling;
+						}
+					}
                 }
             }
 
@@ -643,11 +665,22 @@ void Group::MasterLoot(const uint64& playerGUID, Loot* /*loot*/, WorldObject* ob
         if (!looter->IsInWorld())
             continue;
 
-        if (looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-        {
-            data << uint64(looter->GetGUID());
-            ++real_count;
-        }
+		if (looter->isVip())
+		{
+			if (looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+			{
+				data << uint64(looter->GetGUID());
+				++real_count;
+			}
+		}
+		else
+		{
+			if (looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+			{
+				data << uint64(looter->GetGUID());
+				++real_count;
+			}
+		}
     }
 
     data.put<uint8>(0,real_count);
@@ -655,8 +688,16 @@ void Group::MasterLoot(const uint64& playerGUID, Loot* /*loot*/, WorldObject* ob
     for (GroupReference *itr = GetFirstMember(); itr != NULL; itr = itr->next())
     {
         Player *looter = itr->getSource();
-        if (looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-            looter->GetSession()->SendPacket(&data);
+		if (looter->isVip())
+		{
+			if (looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+				looter->GetSession()->SendPacket(&data);
+		}
+		else
+		{
+			if (looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+				looter->GetSession()->SendPacket(&data);
+		}
     }
 }
 
@@ -1326,8 +1367,16 @@ void Group::UpdateLooterGuid(WorldObject* object, bool ifneed)
         {
             // not update if only update if need and ok
             Player* looter = ObjectAccessor::FindPlayer(guid_itr->guid);
-            if (looter && looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-                return;
+			if (looter->isVip())
+			{
+				if (looter && looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+					return;
+			}
+			else
+			{
+				if (looter && looter->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+					return;
+			}
         }
         ++guid_itr;
     }
@@ -1339,17 +1388,35 @@ void Group::UpdateLooterGuid(WorldObject* object, bool ifneed)
         {
             if (Player* pl = ObjectAccessor::FindPlayer(itr->guid))
             {
-                if (pl->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-                {
-                    bool refresh = pl->GetLootGUID() == object->GetGUID();
+				if (pl->isVip())
+				{
+					if (pl->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+					{
+						bool refresh = pl->GetLootGUID() == object->GetGUID();
 
-                    //if (refresh)                             // update loot for new looter
-                    //    pl->GetSession()->DoLootRelease(pl->GetLootGUID());
-                    SetLooterGuid(pl->GetGUID());
-                    SendUpdate();
-                    if (refresh)                             // update loot for new looter
-                        pl->SendLoot(object->GetGUID(),LOOT_CORPSE);
-                    return;
+						//if (refresh)                             // update loot for new looter
+						//    pl->GetSession()->DoLootRelease(pl->GetLootGUID());
+						SetLooterGuid(pl->GetGUID());
+						SendUpdate();
+						if (refresh)                             // update loot for new looter
+							pl->SendLoot(object->GetGUID(),LOOT_CORPSE);
+						return;
+					}
+				}
+				else
+				{
+					if (pl->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+					{
+						bool refresh = pl->GetLootGUID() == object->GetGUID();
+
+						//if (refresh)                             // update loot for new looter
+						//    pl->GetSession()->DoLootRelease(pl->GetLootGUID());
+						SetLooterGuid(pl->GetGUID());
+						SendUpdate();
+						if (refresh)                             // update loot for new looter
+							pl->SendLoot(object->GetGUID(),LOOT_CORPSE);
+						return;
+					}
                 }
             }
         }
@@ -1360,18 +1427,36 @@ void Group::UpdateLooterGuid(WorldObject* object, bool ifneed)
     {
         if (Player* pl = ObjectAccessor::FindPlayer(itr->guid))
         {
-            if (pl->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
-            {
-                bool refresh = pl->GetLootGUID() == object->GetGUID();
+			if (pl->isVip())
+			{
+				if (pl->GetDistance2d(object) < sWorld.getConfig(CONFIG_VIP_GROUP_XP_DISTANCE))
+				{
+					bool refresh = pl->GetLootGUID() == object->GetGUID();
 
-                //if (refresh)                               // update loot for new looter
-                //    pl->GetSession()->DoLootRelease(pl->GetLootGUID());
-                SetLooterGuid(pl->GetGUID());
-                SendUpdate();
-                if (refresh)                                 // update loot for new looter
-                    pl->SendLoot(object->GetGUID(),LOOT_CORPSE);
-                return;
-            }
+					//if (refresh)                               // update loot for new looter
+					//    pl->GetSession()->DoLootRelease(pl->GetLootGUID());
+					SetLooterGuid(pl->GetGUID());
+					SendUpdate();
+					if (refresh)                                 // update loot for new looter
+						pl->SendLoot(object->GetGUID(),LOOT_CORPSE);
+					return;
+				}
+			}
+			else
+			{
+				if (pl->GetDistance2d(object) < sWorld.getConfig(CONFIG_GROUP_XP_DISTANCE))
+				{
+					bool refresh = pl->GetLootGUID() == object->GetGUID();
+
+					//if (refresh)                               // update loot for new looter
+					//    pl->GetSession()->DoLootRelease(pl->GetLootGUID());
+					SetLooterGuid(pl->GetGUID());
+					SendUpdate();
+					if (refresh)                                 // update loot for new looter
+						pl->SendLoot(object->GetGUID(),LOOT_CORPSE);
+					return;
+				}
+			}
         }
     }
 

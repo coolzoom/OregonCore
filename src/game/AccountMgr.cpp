@@ -127,18 +127,20 @@ AccountOpResult AccountMgr::ChangeUsername(uint32 accid, std::string new_uname, 
 
 AccountOpResult AccountMgr::ChangePassword(uint32 accid, std::string new_passwd)
 {
-    QueryResult_AutoPtr result = LoginDatabase.PQuery("SELECT 1 FROM account WHERE id='%d'", accid);
+    QueryResult_AutoPtr result = LoginDatabase.PQuery("SELECT username FROM account WHERE id='%d'", accid);
     if (!result)
         return AOR_NAME_NOT_EXIST;                          // account doesn't exist
 
     if (utf8length(new_passwd) > MAX_ACCOUNT_STR)
         return AOR_PASS_TOO_LONG;
 
+	Field *fields = result->Fetch();
+	std::string username = fields[0].GetCppString();
     normalizeString(new_passwd);
 
     LoginDatabase.escape_string(new_passwd);
     // also reset s and v to force update at next realmd login
-    if (!LoginDatabase.PExecute("UPDATE account SET v='0', s='0', sha_pass_hash=SHA1(CONCAT(UPPER(username),':',UPPER('%s'))) WHERE id='%d'", new_passwd.c_str(), accid))
+	if (!LoginDatabase.PExecute("UPDATE account SET v='0', s='0', sha_pass_hash=SHA1(CONCAT('%s',':',UPPER('%s'))) WHERE id='%d'", username.c_str(), new_passwd.c_str(), accid))
         return AOR_DB_INTERNAL_ERROR;                       // unexpected error
 
     return AOR_OK;

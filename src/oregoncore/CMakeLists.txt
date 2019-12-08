@@ -79,6 +79,8 @@ if( WIN32 )
   add_custom_command(TARGET oregon-core
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/oregoncore.conf.dist ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/innormative_words.conf ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/letter_analogs.conf ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
   )
 endif()
 

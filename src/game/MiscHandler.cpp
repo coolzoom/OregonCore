@@ -231,6 +231,24 @@ void WorldSession::HandleWhoOpcode(WorldPacket & recv_data)
             // player can see MODERATOR, GAME MASTER, ADMINISTRATOR only if CONFIG_GM_IN_WHO_LIST
             if ((itr->second->GetSession()->GetSecurity() > SEC_PLAYER && !gmInWhoList))
                 continue;
+
+			// player can not see another players in arena preparation
+			if (itr->second->isVip())
+			{
+				if (!sWorld.getConfig(CONFIG_VIP_SEEINWHOLIST_PREP))
+				{
+					if (itr->second->HasAura(SPELL_ARENA_PREPARATION, 0))
+						continue;
+				}
+			}
+			else
+			{
+				if (!sWorld.getConfig(CONFIG_SEEINWHOLIST_PREP))
+				{
+					if (itr->second->HasAura(SPELL_ARENA_PREPARATION, 0))
+						continue;
+				}
+			}
         }
 
         //do not process players which are not in world
@@ -338,6 +356,9 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket & /*recv_data*/)
 {
     DEBUG_LOG("WORLD: Recvd CMSG_LOGOUT_REQUEST Message, security - %u", GetSecurity());
 
+	if (!GetPlayer())
+		return;
+
     if (uint64 lguid = GetPlayer()->GetLootGUID())
         DoLootRelease(lguid);
 
@@ -345,6 +366,8 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket & /*recv_data*/)
     if (GetPlayer()->isInCombat() ||                        //...is in combat
         GetPlayer()->duel         ||                        //...is in Duel
         GetPlayer()->HasAura(9454,0)         ||             //...is frozen by GM via freeze command
+		GetPlayer()->HasAura(6196,0)		 ||				//...hack far sight
+		GetPlayer()->HasAura(6197,0)		 ||				//...hack far sight
                                                             //...is jumping ...is falling
         GetPlayer()->HasUnitMovementFlag(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR))
     {
@@ -361,8 +384,13 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket & /*recv_data*/)
     if (GetPlayer()->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) || GetPlayer()->isInFlight() ||
         GetSecurity() >= sWorld.getConfig(CONFIG_INSTANT_LOGOUT))
     {
-        LogoutPlayer(true);
-        return;
+		if (GetPlayer()->HasAura(6196,0) || GetPlayer()->HasAura(6197,0))
+			return;
+		else
+		{
+			LogoutPlayer(true);
+			return;
+		}
     }
 
     // not set flags if player can't free move to prevent lost state at logout cancel

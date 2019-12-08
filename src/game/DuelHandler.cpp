@@ -79,9 +79,29 @@ void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
     // player surrendered in a duel using /forfeit
     if (GetPlayer()->duel->startTime != 0)
     {
+		if (sWorld.getConfig(CONFIG_DUEL_CD_RESET))
+		{
+			GetPlayer()->ResetAllPowers();
+			GetPlayer()->duel->opponent->ResetAllPowers();
+
+			if (sWorld.getConfig(CONFIG_DUEL_CD_RESET) && !GetPlayer()->GetMap()->IsDungeon())
+				GetPlayer()->RemoveArenaSpellCooldowns();
+
+			if (sWorld.getConfig(CONFIG_DUEL_CD_RESET) && !GetPlayer()->duel->opponent->GetMap()->IsDungeon())
+				GetPlayer()->duel->opponent->RemoveArenaSpellCooldowns();
+		}
+
         GetPlayer()->CombatStopWithPets(true);
+		if (sWorld.getConfig(CONFIG_DUEL_MOD))
+			GetPlayer()->SetHealth(GetPlayer()->GetMaxHealth());
         if (GetPlayer()->duel->opponent)
+		{
             GetPlayer()->duel->opponent->CombatStopWithPets(true);
+			if (sWorld.getConfig(CONFIG_DUEL_MOD))
+				GetPlayer()->duel->opponent->SetHealth(GetPlayer()->duel->opponent->GetMaxHealth());
+		}
+			if (sWorld.getConfig(CONFIG_DUEL_REWARD_SPELL_CAST) > 0)
+				GetPlayer()->duel->opponent->CastSpell(GetPlayer(), sWorld.getConfig(CONFIG_DUEL_REWARD_SPELL_CAST), true);
 
         GetPlayer()->CastSpell(GetPlayer(), 7267, true);    // beg
         GetPlayer()->DuelComplete(DUEL_WON);

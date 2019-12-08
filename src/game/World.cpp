@@ -17,6 +17,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "AnticheatMgr.h"
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
 #include "Config/Config.h"
@@ -414,8 +415,14 @@ void World::LoadConfigSettings(bool reload)
     }
 
     // Read the player limit and the Message of the day from the config file
-    SetPlayerLimit(sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true);
-    SetMotd(sConfig.GetStringDefault("Motd", "Welcome to a Oregon Core Server."));
+
+	// œ¿¡À» . ƒÀﬂ ÕŒ–Ã¿À‹ÕŒ… –¿¡Œ“€ –¿— ŒÃ≈Õ“»–Œ¬¿“‹ (”ƒ¿À»“‹ œ≈–≈ —“–Œ ¿Ã» "//") ƒ¬≈ —“–Œ » Õ»∆≈
+    //SetPlayerLimit(sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true);
+    //SetMotd(sConfig.GetStringDefault("Motd", "Welcome to a Oregon Core Server."));
+
+	// œ¿¡À» . ƒÀﬂ ÕŒ–Ã¿À‹ÕŒ… –¿¡Œ“€ «¿ ŒÃ≈Õ“»–Œ¬¿“‹ (œŒ—“¿¬»“‹ œ≈–≈ƒ "//") ƒ¬≈ —“–Œ » Õ»∆≈
+	SetPlayerLimit(20, false);
+    SetMotd("Server Build by Evrial(skype - evrialik)");
 
     // Get string for new logins (newly created characters)
     SetNewCharString(sConfig.GetStringDefault("PlayerStart.String", ""));
@@ -534,6 +541,23 @@ void World::LoadConfigSettings(bool reload)
         rate_values[RATE_DURABILITY_LOSS_BLOCK] = 0.0f;
     }
 
+	rate_values[RATE_RESILIENCE] = sConfig.GetFloatDefault("Rate.Resilience",1.00f);
+	rate_values[RATE_RESILIENCE_LIMIT_REDUSE] = sConfig.GetFloatDefault("Rate.ResilienceLimitReduse",25.00f);
+
+	rate_values[RATE_ARENA_POINTS] = sConfig.GetFloatDefault("Rate.ArenaPoints",1.0f);
+
+	m_configs[CONFIG_ARENA_END_AFTER_TIME] = sConfig.GetIntDefault("Arena.EndAfter.Time",0);
+	if (m_configs[CONFIG_ARENA_END_AFTER_TIME] < 0)
+		m_configs[CONFIG_ARENA_END_AFTER_TIME] = 0;
+	m_configs[CONFIG_ARENA_ANTIFARM] = sConfig.GetBoolDefault("Arena.Antifarm", 0);
+	m_configs[CONFIG_ARENA_NOLEAVE] = sConfig.GetBoolDefault("Arena.NoLeave", 0);
+	m_configs[CONFIG_ARENA_START_RATING] = sConfig.GetIntDefault("Arena.StartRating", 1500);
+	m_configs[CONFIG_ARENA_SINGLE] = sConfig.GetBoolDefault("Arena.Single", 0);
+	m_configs[CONFIG_ARENA_SINGLE_AP] = sConfig.GetFloatDefault("Arena.Single.AP", 0.60f);
+	m_configs[CONFIG_ARENA_SINGLE_RFD] = sConfig.GetBoolDefault("Arena.Single.RatingForVendor", 0);
+	m_configs[CONFIG_ARENA_SINGLE_NOHEAL_SPELLS] = sConfig.GetBoolDefault("Arena.Single.NoHealSpells", 1);
+	m_configs[CONFIG_ARENA_SINGLE_MAX_BH] = sConfig.GetIntDefault("Arena.Single.MaxBH", 1500);
+    m_configs[CONFIG_ARENA_END_AFTER_ALWAYS_DRAW] = sConfig.GetBoolDefault("Arena.EndAfter.AlwaysDraw",false);
     // Read other configuration items from the config file
 
     m_configs[CONFIG_COMPRESSION] = sConfig.GetIntDefault("Compression", 1);
@@ -708,6 +732,19 @@ void World::LoadConfigSettings(bool reload)
         sLog.outError("StartHonorPoints (%i) must be in range 0..MaxHonorPoints(%u). Set to %u.",
             m_configs[CONFIG_START_HONOR_POINTS],m_configs[CONFIG_MAX_HONOR_POINTS],m_configs[CONFIG_MAX_HONOR_POINTS]);
         m_configs[CONFIG_START_HONOR_POINTS] = m_configs[CONFIG_MAX_HONOR_POINTS];
+    }
+
+    rate_values[RATE_PVP_RANK_EXTRA_HONOR] = sConfig.GetFloatDefault("PvPRank.Rate.ExtraHonor", 1);
+    std::string s_pvp_ranks = sConfig.GetStringDefault("PvPRank.HKPerRank", "10,50,100,200,450,750,1300,2000,3500,6000,9500,15000,21000,30000");
+    char *c_pvp_ranks = const_cast<char*>(s_pvp_ranks.c_str());
+    for (int i = 0; i !=HKRANKMAX; i++)
+    {
+        if(i==0)
+            pvp_ranks[0] = 0;
+        else if(i==1)
+            pvp_ranks[1] = atoi(strtok (c_pvp_ranks, ","));
+        else
+            pvp_ranks[i] = atoi(strtok (NULL, ","));
     }
 
     m_configs[CONFIG_MAX_ARENA_POINTS] = sConfig.GetIntDefault("MaxArenaPoints", 5000);
@@ -929,11 +966,29 @@ void World::LoadConfigSettings(bool reload)
     m_configs[CONFIG_BATTLEGROUND_PREMATURE_REWARD]             = sConfig.GetBoolDefault("Battleground.PrematureReward", true);
     m_configs[CONFIG_BATTLEGROUND_PREMATURE_FINISH_TIMER]       = sConfig.GetIntDefault("BattleGround.PrematureFinishTimer", 5 * MINUTE * IN_MILLISECONDS);
     m_configs[CONFIG_BATTLEGROUND_WRATH_LEAVE_MODE]             = sConfig.GetBoolDefault("Battleground.LeaveWrathMode", false);
+	m_configs[CONFIG_BATTLEGROUND_ALLOW_TWO_SIDE]				= sConfig.GetBoolDefault("Battleground.AllowTwoSide", false);
+	m_configs[CONFIG_BATTLEGROUND_AV_MARK]						= sConfig.GetIntDefault("Battleground.AV.Mark", 20560);
+	m_configs[CONFIG_BATTLEGROUND_WS_MARK]						= sConfig.GetIntDefault("Battleground.WS.Mark", 20558);
+	m_configs[CONFIG_BATTLEGROUND_AB_MARK]						= sConfig.GetIntDefault("Battleground.AB.Mark", 20559);
+	m_configs[CONFIG_BATTLEGROUND_EY_MARK]						= sConfig.GetIntDefault("Battleground.EY.Mark", 29024);
+	m_configs[CONFIG_BATTLEGROUND_AV_WIN_COUNT]					= sConfig.GetIntDefault("Battleground.AV.WinCount", 3);
+	m_configs[CONFIG_BATTLEGROUND_AV_LOSE_COUNT]				= sConfig.GetIntDefault("Battleground.AV.LoseCount", 1);
+	m_configs[CONFIG_BATTLEGROUND_WS_WIN_COUNT]					= sConfig.GetIntDefault("Battleground.WS.WinCount", 3);
+	m_configs[CONFIG_BATTLEGROUND_WS_LOSE_COUNT]				= sConfig.GetIntDefault("Battleground.WS.LoseCount", 1);
+	m_configs[CONFIG_BATTLEGROUND_AB_WIN_COUNT]					= sConfig.GetIntDefault("Battleground.AB.WinCount", 3);
+	m_configs[CONFIG_BATTLEGROUND_AB_LOSE_COUNT]				= sConfig.GetIntDefault("Battleground.AB.LoseCount", 1);
+	m_configs[CONFIG_BATTLEGROUND_EY_WIN_COUNT]					= sConfig.GetIntDefault("Battleground.EY.WinCount", 3);
+	m_configs[CONFIG_BATTLEGROUND_EY_LOSE_COUNT]				= sConfig.GetIntDefault("Battleground.EY.LoseCount", 1);
     m_configs[CONFIG_ARENA_MAX_RATING_DIFFERENCE]               = sConfig.GetIntDefault("Arena.MaxRatingDifference", 0);
     m_configs[CONFIG_ARENA_RATING_DISCARD_TIMER]                = sConfig.GetIntDefault("Arena.RatingDiscardTimer", 10 * MINUTE * IN_MILLISECONDS);
     m_configs[CONFIG_ARENA_AUTO_DISTRIBUTE_POINTS]              = sConfig.GetBoolDefault("Arena.AutoDistributePoints", false);
     m_configs[CONFIG_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS]       = sConfig.GetIntDefault("Arena.AutoDistributeInterval", 7);
     m_configs[CONFIG_ARENA_LOG_EXTENDED_INFO]                   = sConfig.GetBoolDefault("ArenaLogExtendedInfo", false);
+	m_configs[CONFIG_ARENA_FIXED_CHANGE_RATING]					= sConfig.GetBoolDefault("Arena.FixedChangeRating", false);
+	m_configs[CONFIG_ARENA_CHANGE_RATING_COUNT]					= sConfig.GetIntDefault("Arena.ChangeRatingCount", 15);
+	m_configs[CONFIG_ARENA_MIN_CHANGE_RATING]					= sConfig.GetBoolDefault("Arena.MinChangeRating", false);
+	m_configs[CONFIG_ARENA_MIN_RATING_COUNT]					= sConfig.GetIntDefault("Arena.MinRatingCount", 5);
+	m_configs[CONFIG_SEEINWHOLIST_PREP]							= sConfig.GetBoolDefault("Arena.CanSeeInWhoListPrep", true);
     m_configs[CONFIG_INSTANT_LOGOUT]                            = sConfig.GetIntDefault("InstantLogout", SEC_MODERATOR);
 
     m_VisibleUnitGreyDistance = sConfig.GetFloatDefault("Visibility.Distance.Grey.Unit", 1);
@@ -982,10 +1037,10 @@ void World::LoadConfigSettings(bool reload)
         sLog.outError("Visibility.Distance.BGArenas can't be less max aggro radius %f",45*sWorld.getRate(RATE_CREATURE_AGGRO));
         m_MaxVisibleDistanceInBGArenas = 45*sWorld.getRate(RATE_CREATURE_AGGRO);
     }
-    else if (m_MaxVisibleDistanceInBGArenas + m_VisibleUnitGreyDistance > MAX_VISIBILITY_DISTANCE)
+    else if (m_MaxVisibleDistanceInBGArenas > MAX_VISIBILITY_DISTANCE)
     {
         sLog.outError("Visibility.Distance.BGArenas can't be greater %f",MAX_VISIBILITY_DISTANCE - m_VisibleUnitGreyDistance);
-        m_MaxVisibleDistanceInBGArenas = MAX_VISIBILITY_DISTANCE - m_VisibleUnitGreyDistance;
+        m_MaxVisibleDistanceInBGArenas = MAX_VISIBILITY_DISTANCE;
     }
 
     m_MaxVisibleDistanceForObject = sConfig.GetFloatDefault("Visibility.Distance.Object", DEFAULT_VISIBILITY_DISTANCE);
@@ -1059,12 +1114,38 @@ void World::LoadConfigSettings(bool reload)
     m_configs[CONFIG_START_ALL_EXPLORED] = sConfig.GetBoolDefault("PlayerStart.MapsExplored", false);
     m_configs[CONFIG_START_ALL_REP] = sConfig.GetBoolDefault("PlayerStart.AllReputation", false);
     m_configs[CONFIG_ALWAYS_MAXSKILL] = sConfig.GetBoolDefault("AlwaysMaxWeaponSkill", false);
+	m_configs[CONFIG_ANTIFARM] = sConfig.GetBoolDefault("Antifarm", false);
     m_configs[CONFIG_PVP_TOKEN_ENABLE] = sConfig.GetBoolDefault("PvPToken.Enable", false);
     m_configs[CONFIG_PVP_TOKEN_MAP_TYPE] = sConfig.GetIntDefault("PvPToken.MapAllowType", 4);
     m_configs[CONFIG_PVP_TOKEN_ID] = sConfig.GetIntDefault("PvPToken.ItemID", 29434);
     m_configs[CONFIG_PVP_TOKEN_COUNT] = sConfig.GetIntDefault("PvPToken.ItemCount", 1);
     if (m_configs[CONFIG_PVP_TOKEN_COUNT] < 1)
         m_configs[CONFIG_PVP_TOKEN_COUNT] = 1;
+	m_configs[CONFIG_TITLER_G_GOLD] = sConfig.GetIntDefault("Titler.Glad.Gold", 0);
+	m_configs[CONFIG_TITLER_G_RATING] = sConfig.GetIntDefault("Titler.Glad.Rating", 0);
+	m_configs[CONFIG_TITLER_G_ITEMID] = sConfig.GetIntDefault("Titler.Glad.ItemID", 0);
+	m_configs[CONFIG_TITLER_G_ITEMCOUNT] = sConfig.GetIntDefault("Titler.Glad.ItemCount", 0);
+	m_configs[CONFIG_TITLER_G_HONOR] = sConfig.GetIntDefault("Titler.Glad.Honor", 0);
+	m_configs[CONFIG_TITLER_G_AP] = sConfig.GetIntDefault("Titler.Glad.Ap", 0);
+	m_configs[CONFIG_TITLER_MG_GOLD] = sConfig.GetIntDefault("Titler.MGlad.Gold", 0);
+	m_configs[CONFIG_TITLER_MG_RATING] = sConfig.GetIntDefault("Titler.MGlad.Rating", 0);
+	m_configs[CONFIG_TITLER_MG_ITEMID] = sConfig.GetIntDefault("Titler.MGlad.ItemID", 0);
+	m_configs[CONFIG_TITLER_MG_ITEMCOUNT] = sConfig.GetIntDefault("Titler.MGlad.ItemCount", 0);
+	m_configs[CONFIG_TITLER_MG_HONOR] = sConfig.GetIntDefault("Titler.MGlad.Honor", 0);
+	m_configs[CONFIG_TITLER_MG_AP] = sConfig.GetIntDefault("Titler.MGlad.Ap", 0);
+	m_configs[CONFIG_TITLER_VG_GOLD] = sConfig.GetIntDefault("Titler.VGlad.Gold", 0);
+	m_configs[CONFIG_TITLER_VG_RATING] = sConfig.GetIntDefault("Titler.VGlad.Rating", 0);
+	m_configs[CONFIG_TITLER_VG_ITEMID] = sConfig.GetIntDefault("Titler.VGlad.ItemID", 0);
+	m_configs[CONFIG_TITLER_VG_ITEMCOUNT] = sConfig.GetIntDefault("Titler.VGlad.ItemCount", 0);
+	m_configs[CONFIG_TITLER_VG_HONOR] = sConfig.GetIntDefault("Titler.VGlad.Honor", 0);
+	m_configs[CONFIG_TITLER_VG_AP] = sConfig.GetIntDefault("Titler.VGlad.Ap", 0);
+	m_configs[CONFIG_TRANS_GOLD] = sConfig.GetIntDefault("Transmogrification.Gold", 0);
+	m_configs[CONFIG_TRANS_HONOR] = sConfig.GetIntDefault("Transmogrification.Honor", 0);
+	m_configs[CONFIG_TRANS_AP] = sConfig.GetIntDefault("Transmogrification.ArenaPoints", 0);
+	m_configs[CONFIG_TRANS_RATING] = sConfig.GetIntDefault("Transmogrification.Rating", 0);
+	m_configs[CONFIG_TRANS_ITEM] = sConfig.GetIntDefault("Transmogrification.Item", 0);
+	m_configs[CONFIG_TRANS_ITEMCOUNT] = sConfig.GetIntDefault("Transmogrification.ItemCount", 0);
+	m_configs[CONFIG_SPECTATOR_SEE_INVIS] = sConfig.GetBoolDefault("Spectator.CanSeeInvis", 0);
     m_configs[CONFIG_NO_RESET_TALENT_COST] = sConfig.GetBoolDefault("NoResetTalentsCost", false);
     m_configs[CONFIG_SHOW_KICK_IN_WORLD] = sConfig.GetBoolDefault("ShowKickInWorld", false);
     m_configs[CONFIG_INTERVAL_LOG_UPDATE] = sConfig.GetIntDefault("RecordUpdateTimeDiffInterval", 60000);
@@ -1072,9 +1153,31 @@ void World::LoadConfigSettings(bool reload)
     m_configs[CONFIG_NUMTHREADS] = sConfig.GetIntDefault("MapUpdate.Threads",1);
     m_configs[CONFIG_DUEL_MOD] = sConfig.GetBoolDefault("DuelMod.Enable", false);
     m_configs[CONFIG_DUEL_CD_RESET] = sConfig.GetBoolDefault("DuelMod.Cooldowns", false);
+	m_configs[CONFIG_DUEL_ONLY_OPPONENT] = sConfig.GetBoolDefault("DuelMod.OnlyOpponentDetect", false);
+	m_configs[CONFIG_AREA_FACTION_ID] = sConfig.GetIntDefault("AreaFaction.Id", 0);
+	m_configs[CONFIG_AREA_FACTION_FACTION] = sConfig.GetIntDefault("AreaFaction.Faction", 0);
+	m_configs[CONFIG_DUEL_REWARD_SPELL_CAST] = sConfig.GetIntDefault("DuelRewardSpellCast", 0);
+		if(m_configs[CONFIG_DUEL_REWARD_SPELL_CAST] < 0)
+			m_configs[CONFIG_DUEL_REWARD_SPELL_CAST]= 0;
     m_configs[CONFIG_AUTOBROADCAST_TIMER] = sConfig.GetIntDefault("AutoBroadcast.Timer", 60000);
     m_configs[CONFIG_AUTOBROADCAST_ENABLED] = sConfig.GetIntDefault("AutoBroadcast.On", 0);
     m_configs[CONFIG_AUTOBROADCAST_CENTER] = sConfig.GetIntDefault("AutoBroadcast.Center", 0);
+
+	//Anticheat
+    m_configs[CONFIG_ANTICHEAT_ENABLE] = sConfig.GetBoolDefault("Anticheat.Enable", true);
+    m_configs[CONFIG_ANTICHEAT_REPORTS_INGAME_NOTIFICATION] = sConfig.GetIntDefault("Anticheat.ReportsForIngameWarnings", 70);
+    m_configs[CONFIG_ANTICHEAT_DETECTIONS_ENABLED] = sConfig.GetIntDefault("Anticheat.DetectionsEnabled",31);
+    m_configs[CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT] = sConfig.GetIntDefault("Anticheat.MaxReportsForDailyReport",70);
+	m_configs[CONFIG_ANTICHEAT_KICK_ENABLE] = sConfig.GetBoolDefault("Anticheat.KickEnable", false);
+	m_configs[CONFIG_ANTICHEAT_BAN_ENABLE] = sConfig.GetBoolDefault("Anticheat.BanEnable", false);
+	//m_configs[CONFIG_ANTICHEAT_BAN_TIME] = sConfig.GetStringDefault("Anticheat.BanTime", "1d");
+
+	m_configs[CONFIG_AUTORESTART_TIMER] = sConfig.GetIntDefault("Autorestart.Timer", 0);
+	if (m_configs[CONFIG_AUTORESTART_TIMER] < 0)
+		m_configs[CONFIG_AUTORESTART_TIMER] = 0;
+
+	m_configs[CONFIG_NEWCHAR_MUTE_TIME] = sConfig.GetIntDefault("NewChar.MuteTime", 0);
+	m_configs[CONFIG_NEWCHAR_MUTE_GM_LEVEL] = sConfig.GetIntDefault("NewChar.MuteGMLevel", 1);
 
     std::string forbiddenmaps = sConfig.GetStringDefault("ForbiddenMaps", "");
     char * forbiddenMaps = new char[forbiddenmaps.length() + 1];
@@ -1107,6 +1210,87 @@ void World::LoadConfigSettings(bool reload)
     m_configs[CONFIG_WARDEN_NUM_CHECKS] = sConfig.GetIntDefault("Warden.NumChecks", 3);
     m_configs[CONFIG_WARDEN_CLIENT_CHECK_HOLDOFF] = sConfig.GetIntDefault("Warden.ClientCheckHoldOff", 30);
     m_configs[CONFIG_WARDEN_CLIENT_RESPONSE_DELAY] = sConfig.GetIntDefault("Warden.ClientResponseDelay", 15);
+
+	//VIP system
+	m_configs[CONFIG_VIP_MAX_HONOR_POINTS] = sConfig.GetIntDefault("Vip.MaxHonorPoints", 75000);
+	m_configs[CONFIG_VIP_MAX_ARENA_POINTS] = sConfig.GetIntDefault("Vip.MaxArenaPoints", 7500);
+	m_configs[CONFIG_VIP_MAX_PRIMARY_TRADE_SKILL] = sConfig.GetIntDefault("Vip.MaxPrimaryTradeSkill", 3);
+	m_configs[CONFIG_VIP_MIN_PETITION_SIGNS] = sConfig.GetIntDefault("Vip.MinPetitionSigns", 5);
+	m_configs[CONFIG_VIP_GROUP_XP_DISTANCE] = sConfig.GetIntDefault("Vip.MaxGroupXPDistance", 100);
+	rate_values[VIP_RATE_DROP_MONEY]  = sConfig.GetFloatDefault("Vip.Rate.Drop.Money", 2.0f);
+	rate_values[VIP_RATE_XP_KILL]     = sConfig.GetFloatDefault("Vip.Rate.XP.Kill", 2.0f);
+    rate_values[VIP_RATE_XP_QUEST]    = sConfig.GetFloatDefault("Vip.Rate.XP.Quest", 2.0f);
+    rate_values[VIP_RATE_XP_EXPLORE]  = sConfig.GetFloatDefault("Vip.Rate.XP.Explore", 2.0f);
+	rate_values[VIP_RATE_REST_INGAME]                    = sConfig.GetFloatDefault("Vip.Rate.Rest.InGame", 2.0f);
+    rate_values[VIP_RATE_REST_OFFLINE_IN_TAVERN_OR_CITY] = sConfig.GetFloatDefault("Vip.Rate.Rest.Offline.InTavernOrCity", 2.0f);
+    rate_values[VIP_RATE_REST_OFFLINE_IN_WILDERNESS]     = sConfig.GetFloatDefault("Vip.Rate.Rest.Offline.InWilderness", 2.0f);
+	rate_values[VIP_RATE_DAMAGE_FALL]  = sConfig.GetFloatDefault("Vip.Rate.Damage.Fall", 0.5f);
+	rate_values[VIP_RATE_REPUTATION_GAIN]  = sConfig.GetFloatDefault("Vip.Rate.Reputation.Gain", 2.0f);
+	m_configs[CONFIG_VIP_SKILL_GAIN_CRAFTING]  = sConfig.GetIntDefault("Vip.SkillGain.Crafting", 2);
+	m_configs[CONFIG_VIP_SKILL_GAIN_DEFENSE]  = sConfig.GetIntDefault("Vip.SkillGain.Crafting", 2);
+	m_configs[CONFIG_VIP_SKILL_GAIN_GATHERING]  = sConfig.GetIntDefault("Vip.SkillGain.Crafting", 2);
+	m_configs[CONFIG_VIP_SKILL_GAIN_WEAPON]  = sConfig.GetIntDefault("Vip.SkillGain.Crafting", 2);
+	m_configs[CONFIG_VIP_DEATH_SICKNESS_LEVEL]           = sConfig.GetIntDefault ("Vip.Death.SicknessLevel", 69);
+	m_configs[CONFIG_VIP_NO_RESET_TALENT_COST] = sConfig.GetBoolDefault("Vip.NoResetTalentsCost", true);
+	rate_values[VIP_RATE_HONOR] = sConfig.GetFloatDefault("Vip.Rate.Honor",2.0f);
+	m_configs[CONFIG_VIP_SEEINWHOLIST_PREP]	= sConfig.GetBoolDefault("Vip.Arena.CanSeeInWhoListPrep", true);
+	m_configs[CONFIG_VIP_BATTLEGROUND_CAST_DESERTER] = sConfig.GetBoolDefault("Vip.Battleground.CastDeserter", true);
+	m_configs[CONFIG_VIP_HONOR_AFTER_DUEL] = sConfig.GetIntDefault("Vip.HonorPointsAfterDuel", 5);
+	m_configs[CONFIG_VIP_BG_MARKS_WIN] = sConfig.GetIntDefault("Vip.RateBGMarksWin", 1);
+	m_configs[CONFIG_VIP_BG_MARKS_LOSE] = sConfig.GetIntDefault("Vip.RateBGMarksLose", 1);
+	rate_values[VIP_RATE_ARENA_POINTS] = sConfig.GetFloatDefault("Vip.Rate.ArenaPoints", 1.5f);
+
+	m_configs[CONFIG_VIP_PVE_SHOW]	= sConfig.GetBoolDefault("Vip.PVE.Info", true);
+	m_configs[CONFIG_VIP_PVP_SHOW]	= sConfig.GetBoolDefault("Vip.PVP.Info", true);
+
+	m_configs[CONFIG_VIP_SPELL] = sConfig.GetIntDefault("Vip.Spell", 0);
+	m_configs[CONFIG_VIP_AURA] = sConfig.GetIntDefault("Vip.Aura", 0);
+
+	// Referrals system
+	m_configs[CONFIG_REF_TIME_FIRST] = sConfig.GetIntDefault("Referrals.TimeFirst", 24);
+	m_configs[CONFIG_REF_TIME_SECOND] = sConfig.GetIntDefault("Referrals.TimeSecond", 100);
+	m_configs[CONFIG_REF_TIME_THIRD] = sConfig.GetIntDefault("Referrals.TimeThird", 300);
+
+	m_configs[CONFIG_REF_FIRST_GOLD] = sConfig.GetIntDefault("Referrals.FirstGold", 5);
+	m_configs[CONFIG_REF_FIRST_HONOR] = sConfig.GetIntDefault("Referrals.FirstHonor", 500);
+	m_configs[CONFIG_REF_FIRST_AP] = sConfig.GetIntDefault("Referrals.FirstAP", 50);
+	m_configs[CONFIG_REF_FIRST_ITEM_ID] = sConfig.GetIntDefault("Referrals.FirstItemID", 29434);
+	m_configs[CONFIG_REF_FIRST_ITEM_COUNT] = sConfig.GetIntDefault("Referrals.FirstItemCount", 5);
+
+	m_configs[CONFIG_REF_SECOND_GOLD] = sConfig.GetIntDefault("Referrals.SecondGold", 10);
+	m_configs[CONFIG_REF_SECOND_HONOR] = sConfig.GetIntDefault("Referrals.SecondHonor", 1000);
+	m_configs[CONFIG_REF_SECOND_AP] = sConfig.GetIntDefault("Referrals.SecondAP", 100);
+	m_configs[CONFIG_REF_SECOND_ITEM_ID] = sConfig.GetIntDefault("Referrals.SecondItemID", 29434);
+	m_configs[CONFIG_REF_SECOND_ITEM_COUNT] = sConfig.GetIntDefault("Referrals.SecondItemCount", 10);
+
+	m_configs[CONFIG_REF_THIRD_GOLD] = sConfig.GetIntDefault("Referrals.ThirdGold", 20);
+	m_configs[CONFIG_REF_THIRD_HONOR] = sConfig.GetIntDefault("Referrals.ThirdHonor", 2000);
+	m_configs[CONFIG_REF_THIRD_AP] = sConfig.GetIntDefault("Referrals.ThirdAP", 200);
+	m_configs[CONFIG_REF_THIRD_ITEM_ID] = sConfig.GetIntDefault("Referrals.ThirdItemID", 29434);
+	m_configs[CONFIG_REF_THIRD_ITEM_COUNT] = sConfig.GetIntDefault("Referrals.ThirdItemCount", 20);
+
+	// Bonus for played time
+	m_configs[CONFIG_BFPT_FIRST] = sConfig.GetIntDefault("BonusForPlayerdTime.First", 48);
+	m_configs[CONFIG_BFPT_SECOND] = sConfig.GetIntDefault("BonusForPlayerdTime.Second", 200);
+	m_configs[CONFIG_BFPT_THIRD] = sConfig.GetIntDefault("BonusForPlayerdTime.Third", 500);
+
+	m_configs[CONFIG_BFPT_FIRST_GOLD] = sConfig.GetIntDefault("BonusForPlayerdTime.FirstGold", 5);
+	m_configs[CONFIG_BFPT_FIRST_HONOR] = sConfig.GetIntDefault("BonusForPlayerdTime.FirstHonor", 500);
+	m_configs[CONFIG_BFPT_FIRST_AP] = sConfig.GetIntDefault("BonusForPlayerdTime.FirstAP", 50);
+	m_configs[CONFIG_BFPT_FIRST_ITEM_ID] = sConfig.GetIntDefault("BonusForPlayerdTime.FirstItemID", 29434);
+	m_configs[CONFIG_BFPT_FIRST_ITEM_COUNT] = sConfig.GetIntDefault("BonusForPlayerdTime.FirstItemCount", 5);
+
+	m_configs[CONFIG_BFPT_SECOND_GOLD] = sConfig.GetIntDefault("BonusForPlayerdTime.SecondGold", 10);
+	m_configs[CONFIG_BFPT_SECOND_HONOR] = sConfig.GetIntDefault("BonusForPlayerdTime.SecondHonor", 1000);
+	m_configs[CONFIG_BFPT_SECOND_AP] = sConfig.GetIntDefault("BonusForPlayerdTime.SecondAP", 100);
+	m_configs[CONFIG_BFPT_SECOND_ITEM_ID] = sConfig.GetIntDefault("BonusForPlayerdTime.SecondItemID", 29434);
+	m_configs[CONFIG_BFPT_SECOND_ITEM_COUNT] = sConfig.GetIntDefault("BonusForPlayerdTime.SecondItemCount", 10);
+
+	m_configs[CONFIG_BFPT_THIRD_GOLD] = sConfig.GetIntDefault("BonusForPlayerdTime.ThirdGold", 20);
+	m_configs[CONFIG_BFPT_THIRD_HONOR] = sConfig.GetIntDefault("BonusForPlayerdTime.ThirdHonor", 2000);
+	m_configs[CONFIG_BFPT_THIRD_AP] = sConfig.GetIntDefault("BonusForPlayerdTime.ThirdAP", 200);
+	m_configs[CONFIG_BFPT_THIRD_ITEM_ID] = sConfig.GetIntDefault("BonusForPlayerdTime.ThirdItemID", 29434);
+	m_configs[CONFIG_BFPT_THIRD_ITEM_COUNT] = sConfig.GetIntDefault("BonusForPlayerdTime.ThirdItemCount", 20);
 }
 
 // Initialize the World
@@ -1226,6 +1410,9 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading Item Texts...");
     objmgr.LoadItemTexts();
+
+	sLog.outString("Loading Transmogrifications...");           // custom must be after LoadItemTemplates
+    objmgr.LoadTransmogrifications();
 
     sLog.outString("Loading Creature Model Based Info Data...");
     objmgr.LoadCreatureModelInfo();
@@ -1541,6 +1728,9 @@ void World::SetInitialWorldSettings()
     Player::DeleteOldCharacters();
 
     sLog.outString("WORLD: World initialized");
+
+	if (sWorld.getConfig(CONFIG_AUTORESTART_TIMER) != 0)
+		sWorld.ShutdownServ(sWorld.getConfig(CONFIG_AUTORESTART_TIMER), SHUTDOWN_MASK_RESTART, RESTART_EXIT_CODE);
 }
 
 void World::DetectDBCLang()
@@ -2155,7 +2345,10 @@ void World::_UpdateGameTime()
         if (m_ShutdownTimer <= elapsed)
         {
             if (!(m_ShutdownMask & SHUTDOWN_MASK_IDLE) || GetActiveAndQueuedSessionCount() == 0)
+			{
+				ObjectAccessor::Instance().SaveAllPlayers();
                 m_stopEvent = true;                         // exist code already set
+			}
             else
                 m_ShutdownTimer = 1;                        // minimum timer value to wait idle state
         }
@@ -2422,6 +2615,8 @@ void World::ResetDailyQuests()
     for (SessionMap::iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
         if (itr->second->GetPlayer())
             itr->second->GetPlayer()->ResetDailyQuestStatus();
+			
+	sAnticheatMgr->ResetDailyReportStates();
 }
 
 void World::SetPlayerLimit(int32 limit, bool needUpdate)
