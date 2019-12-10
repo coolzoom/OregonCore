@@ -1072,6 +1072,16 @@ class Player : public Unit, public GridObject<Player>
             else m_ExtraFlags &= ~PLAYER_EXTRA_PVP_DEATH;
         }
 
+        bool isSpectateCanceled()
+        {
+            return IsSpectatingFlag;
+        }
+        bool IsSpectator() const
+        {
+            return spectatorFlag;
+        }
+        void SetSpectator(bool on);
+
         void GiveXP(uint32 xp, Unit* victim, bool disableRafBonus = false);
         void GiveLevel(uint32 level, bool ignoreRAF = false);
         void InitStatsForLevel(bool reapplyMods = false);
@@ -2940,6 +2950,9 @@ class Player : public Unit, public GridObject<Player>
         float  m_summon_x;
         float  m_summon_y;
         float  m_summon_z;
+
+        bool spectatorFlag;
+        bool IsSpectatingFlag;
 
         DeclinedName* m_declinedname;
 

@@ -300,3 +300,15 @@ bool ChatHandler::HandleRAFGrantLevelCommand(const char*)
 
     return true;
 }
+
+bool ChatHandler::HandleSpectatorStopCommand(const char* args)
+{
+    Player * plr = m_session->GetPlayer();
+    
+        if (plr->IsSpectator())
+        {
+            plr->TeleportTo(plr->GetBattlegroundEntryPoint());
+            plr->SetSpectator(false);
+        }
+    return true;
+}

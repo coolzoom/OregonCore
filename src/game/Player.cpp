@@ -20897,3 +20897,66 @@ void Player::RemoveRestFlag(RestFlag restFlag)
         RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING);
     }
 }
+
+void Player::SetSpectator(bool on)
+{
+    if (on)
+    {
+        CombatStop();
+        SetSpeed(MOVE_RUN, 2.0);
+        
+        spectatorFlag = true;
+        
+        RemoveArenaAuras();
+        RemoveAllEnchantments(TEMP_ENCHANTMENT_SLOT, true);
+        
+        //m_ExtraFlags |= PLAYER_EXTRA_GM_ON;
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+        m_ExtraFlags |= PLAYER_EXTRA_GM_INVISIBLE;
+        SetFaction(35);
+        m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GM, SEC_ADMINISTRATOR);
+        SetFFAPvP(false);
+        
+        RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
+        RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
+        Pet * pet = GetPet();
+        if (pet)
+        {
+            if (pet->getPetType() == SUMMON_PET || pet->getPetType() == HUNTER_PET)
+            {
+                SetTemporaryUnsummonedPetNumber(pet->GetCharmInfo()->GetPetNumber());
+                SetOldPetSpell(pet->GetUInt32Value(UNIT_CREATED_BY_SPELL));
+            }
+            RemovePet(NULL, PET_SAVE_NOT_IN_SLOT);
+        }
+        else
+             SetTemporaryUnsummonedPetNumber(0);
+        
+        ResetContestedPvP();
+        
+        getHostileRefManager().setOnlineOfflineState(false);
+        CombatStopWithPets();
+        
+        SetDisplayId(25900);
+    }
+    else
+    {
+        UpdateSpeed(MOVE_RUN, true);
+        spectatorFlag = false;
+  		//m_ExtraFlags &= ~ PLAYER_EXTRA_GM_ON;
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
+        m_ExtraFlags &= ~PLAYER_EXTRA_GM_INVISIBLE;
+        setFactionForRace(getRace());
+        m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GM, SEC_PLAYER);
+        
+        // restore FFA PvP Server state
+        if (sWorld.IsFFAPvPRealm())
+            SetFFAPvP(true);
+        
+        getHostileRefManager().setOnlineOfflineState(true);
+        DeMorph();
+    }
+    UpdateObjectVisibility();
+}

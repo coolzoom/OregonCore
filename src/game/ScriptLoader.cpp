@@ -19,6 +19,9 @@
 
 #ifdef SCRIPTS
 
+//custom
+void AddSC_npc_arena_spectator();
+
 //examples
 //void AddSC_custom_example();
 //void AddSC_custom_gossip_codebox();
@@ -396,6 +399,9 @@ void AddSC_onevents();
 void AddScripts()
 {
     #ifdef SCRIPTS
+    //custom
+    AddSC_npc_arena_spectator();
+     
     //    AddSC_custom_example();
     //    AddSC_custom_gossip_codebox();
     //    AddSC_test();

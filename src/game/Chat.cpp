@@ -702,6 +702,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "bindsight",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleBindSightCommand,           "", NULL },
         { "unbindsight",    SEC_ADMINISTRATOR,  false, &ChatHandler::HandleUnbindSightCommand,         "", NULL },
         { "raf",            SEC_ADMINISTRATOR,  true,  NULL,                                           "", referFriendCommandTable },
+        { "spstop",			SEC_PLAYER,		    true,  &ChatHandler::HandleSpectatorStopCommand,	   "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
