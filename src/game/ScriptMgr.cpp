@@ -1219,7 +1219,8 @@ void ScriptMgr::ScriptRegistry<TScript>::AddScript(TScript* const script)
 
     // See if the script is using the same memory as another script. If this happens, it means that
     // someone forgot to allocate new memory for a script.
-    for (ScriptMap::iterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
+    typedef typename ScriptMap::iterator ScriptMapIterator;
+    for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
     {
         if (it->second == script)
         {
