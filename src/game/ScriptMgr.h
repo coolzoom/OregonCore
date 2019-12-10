@@ -856,7 +856,7 @@ public: /* ScriptRegistry */
     public:
 
         typedef std::map<uint32, TScript*> ScriptMap;
-
+        typedef typename ScriptMap::iterator ScriptMapIterator;
         // The actual list of scripts. This will be accessed concurrently, so it must not be modified
         // after server startup.
         static ScriptMap ScriptPointerList;
@@ -864,7 +864,7 @@ public: /* ScriptRegistry */
         // Gets a script by its ID (assigned by ObjectMgr).
         static TScript* GetScriptById(uint32 id)
         {
-            for (ScriptMap::iterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
+            for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
                 if (it->first == id)
                     return it->second;
 
