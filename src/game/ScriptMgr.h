@@ -12,7 +12,7 @@
 
 #include "DBCStructure.h"
 #include "ObjectMgr.h"
-#include "BattleGround.h"
+#include "Battleground.h"
 #include "OutdoorPvPMgr.h"
 #include "SharedDefines.h"
 #include "Chat.h"
