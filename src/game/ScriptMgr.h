@@ -11,7 +11,6 @@
 #include "Common.h"
 
 #include "DBCStructure.h"
-#include "config.h"
 #include "ObjectMgr.h"
 #include "BattleGround.h"
 #include "OutdoorPvPMgr.h"
