@@ -1237,7 +1237,8 @@ void ScriptMgr::ScriptRegistry<TScript>::AddScript(TScript* const script)
     {
         // Try to find an existing script.
         bool existing = false;
-        for (ScriptMap::iterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
+        typedef typename ScriptMap::iterator ScriptMapIterator;
+        for (ScriptMapIterator it = ScriptPointerList.begin(); it != ScriptPointerList.end(); ++it)
         {
             // If the script names match...
             if (it->second->GetName() == script->GetName())
