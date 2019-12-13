@@ -1190,6 +1190,7 @@ void Battleground::AddPlayer(Player* plr)
     sBattlegroundMgr.BuildPlayerJoinedBattlegroundPacket(&data, plr);
     SendPacketToTeam(team, &data, plr, false);
 
+    plr->SetSpectator(false);
     plr->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
     plr->CombatStop();
     plr->getHostileRefManager().deleteReferences();
@@ -1252,11 +1253,24 @@ void Battleground::EventPlayerLoggedOut(Player* player)
     if (GetStatus() == STATUS_IN_PROGRESS)
     {
         if (isBattleground())
+        {
             EventPlayerDroppedFlag(player);
+            player->LeaveBattleground();
+        }
     }
 
     if (isArena())
-        player->LeaveBattleground();
+    {
+        if (GetAlivePlayersCountByTeam(player->GetTeam()) <= 1 && GetPlayersCountByTeam(GetOtherTeam(player->GetTeam())))
+            EndBattleground(GetOtherTeam(player->GetTeam()));
+        if (!player->IsSpectator())
+            player->LeaveBattleground();
+        else
+        {
+            player->SetSpectator(false);
+            player->LeaveBattleground();
+        }
+    }
 }
 
 /* This method should be called only once ... it adds pointer to queue */

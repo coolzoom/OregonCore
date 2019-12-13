@@ -2640,9 +2640,6 @@ void BattlegroundMap::RemoveAllPlayers()
             if (Player* plr = itr->GetSource())
             {
                 if (!plr->IsBeingTeleportedFar())
-                    plr->TeleportTo(plr->GetBattlegroundEntryPoint());
-
-                if (!plr->IsBeingTeleportedFar())
                 {
                     plr->TeleportTo(plr->GetBattlegroundEntryPoint());
                     if (plr->IsSpectator())

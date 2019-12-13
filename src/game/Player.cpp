@@ -472,6 +472,8 @@ Player::Player(WorldSession* session) : Unit(true), m_reputationMgr(this)
 
     m_ExtraFlags = 0;
 
+    spectatorFlag = false;
+
     // players always accept
     if (GetSession()->GetSecurity() == SEC_PLAYER)
         SetAcceptWhispers(true);
@@ -18773,7 +18775,7 @@ void Player::LeaveBattleground(bool teleportToEntryPoint)
         bg->RemovePlayerAtLeave(GetGUID(), teleportToEntryPoint, true);
 
         // call after remove to be sure that player resurrected for correct cast
-        if (bg->isBattleground() && !IsGameMaster() && sWorld.getConfig(CONFIG_BATTLEGROUND_CAST_DESERTER))
+        if (bg->isBattleground() && !IsGameMaster() && !IsSpectator() && sWorld.getConfig(CONFIG_BATTLEGROUND_CAST_DESERTER))
         {
             if (bg->GetStatus() == STATUS_IN_PROGRESS || bg->GetStatus() == STATUS_WAIT_JOIN)
             {
@@ -18839,6 +18841,11 @@ bool Player::IsNeverVisible() const
     if (Unit::IsNeverVisible())
         return true;
 
+    if (IsSpectator())
+    {
+        return true;
+    }
+
     if (GetSession()->PlayerLogout() || GetSession()->PlayerLoading())
         return true;
 
@@ -18850,6 +18857,17 @@ bool Player::CanAlwaysSee(WorldObject const* obj) const
     // Always can see self
     if (m_mover == obj)
         return true;
+
+    if (obj->GetTypeId() == TYPEID_PLAYER)
+    {
+        if (IsSpectator() && !obj->ToPlayer()->IsSpectator())
+        {
+            if (!sWorld.getConfig(CONFIG_SPECTATOR_SEE_INVIS))
+                return false;
+            else
+                return true;
+        }
+    }
 
     if (uint64 guid = GetUInt64Value(PLAYER_FARSIGHT))
         if (obj->GetGUID() == guid)
@@ -18882,6 +18900,9 @@ bool Player::IsVisibleGloballyFor(Player* u) const
     // Visible units, always are visible for all players
     if (IsVisible())
         return true;
+
+    if (u->ToPlayer()->IsSpectator() && IsSpectator())
+        return false;
 
     // GMs are visible for higher gms (or players are visible for gms)
     if (u->GetSession()->GetSecurity() > SEC_PLAYER)

@@ -7259,6 +7259,9 @@ ReputationRank Unit::GetReactionTo(Unit const* target) const
                 return *repRank;
     }
 
+    // Arena Spectator
+    if (selfPlayerOwner->IsSpectator() || targetPlayerOwner->IsSpectator())
+        return REP_FRIENDLY;
 
     if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE))
     {
@@ -7442,6 +7445,12 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
 
     if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return false;
+
+    if (victim->GetTypeId() == TYPEID_PLAYER)
+    {
+        if (victim->ToPlayer()->IsSpectator())
+            return false;
+    }
 
     // nobody can attack GM in GM-mode
     if (victim->GetTypeId() == TYPEID_PLAYER)

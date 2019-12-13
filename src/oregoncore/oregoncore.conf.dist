@@ -2129,3 +2129,13 @@ DatabaseUpdater.PathToUpdates = ""
 WarsongTimer.Enabled = 0
 CreateUpdateFile.Enabled = 0
 Console.RestartTimer = 10
+
+######################################################## ################################
+# NPC ARENA SPECTATOR Arena Spectator - view arena battles of other players
+#
+# Spectator.CanSeeInvis - can a spectator see players with invisibility
+# Default: 0 (cannot)
+# 1 (may)
+#
+######################################################## ################################
+Spectator.CanSeeInvis = 0

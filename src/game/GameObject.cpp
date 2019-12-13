@@ -397,6 +397,9 @@ void GameObject::Update(uint32 diff)
 
                     if (ok)
                     {
+                        if (Player *tmpPlayer = ok->ToPlayer())
+                            if (tmpPlayer->IsSpectator())
+                                return;
                         // some traps do not have spell but should be triggered
                         if (goInfo->trap.spellId)
                             CastSpell(ok, goInfo->trap.spellId);
@@ -1509,6 +1512,11 @@ void GameObject::SetLootState(LootState s, Unit* unit)
 
 void GameObject::CastSpell(Unit* target, uint32 spellId, bool triggered /*= true*/)
 {
+    if (target)
+        if (Player *tmpPlayer = target->ToPlayer())
+            if (tmpPlayer->IsSpectator())
+                return;
+
     SpellEntry const* spellProto = sSpellStore.LookupEntry(spellId);
     if (!spellProto)
         return;

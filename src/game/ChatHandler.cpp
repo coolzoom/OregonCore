@@ -238,11 +238,29 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
     case CHAT_MSG_YELL:
         {
             if (type == CHAT_MSG_SAY)
-                GetPlayer()->Say(msg, lang);
+                if (GetPlayer()->IsSpectator())
+                {
+                    SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+                    return;
+                }
+                else
+                    GetPlayer()->Say(msg, lang);
             else if (type == CHAT_MSG_EMOTE)
-                GetPlayer()->TextEmote(msg);
+                if (GetPlayer()->IsSpectator())
+                {
+                    SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+                    return;
+                }
+                else
+                    GetPlayer()->TextEmote(msg);
             else if (type == CHAT_MSG_YELL)
-                GetPlayer()->Yell(msg, lang);
+                if (GetPlayer()->IsSpectator())
+                {
+                    SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
+                    return;
+                }
+                else
+                    GetPlayer()->Yell(msg, lang);
         }
         break;
 
@@ -511,6 +529,12 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recv_data)
     {
         std::string timeStr = secsToTimeString(m_muteTime - time(NULL));
         SendNotification(GetOregonString(LANG_WAIT_BEFORE_SPEAKING), timeStr.c_str());
+        return;
+    }
+
+    if (_player->IsSpectator())
+    {
+        SendNotification("You can not Speak in this Channel when Spectate Arena Match. Use another Channel!");
         return;
     }
 
