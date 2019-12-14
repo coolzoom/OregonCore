@@ -749,7 +749,7 @@ public: /* CreatureScript */
     bool OnQuestComplete(Player* player, Creature* creature, Quest const* quest);
     bool OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 opt);
     uint32 GetDialogStatus(Player* player, Creature* creature);
-    CreatureAI* OnGetAI(Creature* creature);
+    CreatureAI* GetCreatureAI(Creature* creature);
     void OnCreatureUpdate(Creature* creature, uint32 diff);
 
 public: /* GameObjectScript */

@@ -664,7 +664,7 @@ uint32 ScriptMgr::GetDialogStatus(Player* player, Creature* creature)
     return tmpscript->OnDialogStatus(player, creature);
 }
 
-CreatureAI* ScriptMgr::OnGetAI(Creature* creature)
+CreatureAI* ScriptMgr::GetCreatureAI(Creature* creature)
 {
     ASSERT(creature);
 
@@ -1005,6 +1005,12 @@ GroupScript::GroupScript(const char* name)
     : ScriptObject(name)
 {
     ScriptMgr::ScriptRegistry<GroupScript>::AddScript(this);
+}
+
+PlayerScript::PlayerScript(const char* name)
+	: ScriptObject(name)
+{
+	ScriptMgr::ScriptRegistry<PlayerScript>::AddScript(this);
 }
 
 // Group
