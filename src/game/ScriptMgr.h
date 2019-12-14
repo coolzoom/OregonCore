@@ -488,7 +488,7 @@ public:
     virtual uint32 OnDialogStatus(Player* player, Creature* creature) { return 0; }
 
     // Called when a CreatureAI object is needed for the creature.
-    virtual CreatureAI* OnGetAI() { return NULL; }
+    virtual CreatureAI* OnGetAI(Creature* creature) { return NULL; }
 };
 
 class GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
@@ -749,7 +749,7 @@ public: /* CreatureScript */
     bool OnQuestComplete(Player* player, Creature* creature, Quest const* quest);
     bool OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 opt);
     uint32 GetDialogStatus(Player* player, Creature* creature);
-    CreatureAI* GetCreatureAI(Creature* creature);
+    CreatureAI* OnGetAI(Creature* creature);
     void OnCreatureUpdate(Creature* creature, uint32 diff);
 
 public: /* GameObjectScript */
