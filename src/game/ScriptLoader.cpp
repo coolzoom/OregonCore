@@ -92,7 +92,7 @@ void AddSC_boss_terestian_illhoof();
 void AddSC_boss_moroes();
 void AddSC_boss_nightbane();
 void AddSC_boss_netherspite();
-//void AddSC_bosses_opera();
+void AddSC_bosses_opera();
 void AddSC_instance_karazhan();
 //void AddSC_chess_event();
 void AddSC_karazhan();
@@ -464,7 +464,7 @@ void AddScripts()
     AddSC_boss_malchezaar();
     AddSC_boss_terestian_illhoof();
     AddSC_boss_moroes();
-    //AddSC_bosses_opera();
+    AddSC_bosses_opera();
     AddSC_boss_nightbane();
     AddSC_boss_netherspite();
     AddSC_instance_karazhan();
