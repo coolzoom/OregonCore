@@ -175,7 +175,7 @@ void AddSC_boss_brutallus();
 void AddSC_boss_felmyst();
 void AddSC_boss_eredar_twins();
 void AddSC_boss_muru();
-//void AddSC_boss_kiljaeden();
+void AddSC_boss_kiljaeden();
 void AddSC_sunwell_plateau();
 void AddSC_boss_archaedas();                 //Uldaman
 void AddSC_boss_ironaya();
@@ -549,7 +549,7 @@ void AddScripts()
     AddSC_boss_felmyst();
     AddSC_boss_eredar_twins();
     AddSC_boss_muru();
-    //AddSC_boss_kiljaeden();
+    AddSC_boss_kiljaeden();
     AddSC_sunwell_plateau();
     AddSC_boss_archaedas();                 //Uldaman
     AddSC_boss_ironaya();
