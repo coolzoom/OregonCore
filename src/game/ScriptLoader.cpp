@@ -266,7 +266,7 @@ void AddSC_instance_razorfen_downs();
 void AddSC_razorfen_kraul();                 //Razorfen Kraul
 void AddSC_instance_razorfen_kraul();
 void AddSC_boss_kurinnaxx();                 //Ruins of ahn'qiraj
-//void AddSC_boss_cthun();                     //Temple of ahn'qiraj
+void AddSC_boss_cthun();                     //Temple of ahn'qiraj
 void AddSC_boss_fankriss();
 void AddSC_boss_huhuran();
 void AddSC_bug_trio();
@@ -639,7 +639,7 @@ void AddScripts()
     AddSC_razorfen_kraul();                 //Razorfen Kraul
     AddSC_instance_razorfen_kraul();
     AddSC_boss_kurinnaxx();                 //Ruins of ahn'qiraj
-    //AddSC_boss_cthun();                     //Temple of ahn'qiraj
+    AddSC_boss_cthun();                     //Temple of ahn'qiraj
     AddSC_boss_fankriss();
     AddSC_boss_huhuran();
     AddSC_bug_trio();
