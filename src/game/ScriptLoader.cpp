@@ -99,7 +99,7 @@ void AddSC_karazhan();
 void AddSC_boss_felblood_kaelthas();         // Magister's Terrace
 void AddSC_boss_selin_fireheart();
 void AddSC_boss_vexallus();
-//void AddSC_boss_priestess_delrissa();
+void AddSC_boss_priestess_delrissa();
 void AddSC_instance_magisters_terrace();
 void AddSC_magisters_terrace();
 void AddSC_boss_lucifron();                  //Molten core
@@ -473,7 +473,7 @@ void AddScripts()
     AddSC_boss_felblood_kaelthas();         // Magister's Terrace
     AddSC_boss_selin_fireheart();
     AddSC_boss_vexallus();
-    //AddSC_boss_priestess_delrissa();
+    AddSC_boss_priestess_delrissa();
     AddSC_instance_magisters_terrace();
     AddSC_magisters_terrace();
     AddSC_boss_lucifron();                  //Molten core
