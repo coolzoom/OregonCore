@@ -320,7 +320,7 @@ void AddSC_boss_grandmaster_vorpil();
 void AddSC_boss_murmur();
 void AddSC_black_temple();                   //Black Temple
 void AddSC_boss_illidan();
-//void AddSC_boss_shade_of_akama();
+void AddSC_boss_shade_of_akama();
 void AddSC_boss_supremus();
 void AddSC_boss_gurtogg_bloodboil();
 void AddSC_boss_mother_shahraz();
@@ -692,7 +692,7 @@ void AddScripts()
     AddSC_boss_murmur();
     AddSC_black_temple();                   //Black Temple
     AddSC_boss_illidan();
-    //AddSC_boss_shade_of_akama();
+    AddSC_boss_shade_of_akama();
     AddSC_boss_supremus();
     AddSC_boss_gurtogg_bloodboil();
     AddSC_boss_mother_shahraz();
