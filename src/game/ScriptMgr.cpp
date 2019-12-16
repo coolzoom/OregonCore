@@ -538,7 +538,7 @@ InstanceData* ScriptMgr::CreateInstanceData(InstanceMap* map)
 {
     ASSERT(map);
     GET_SCRIPT_RET(InstanceMapScript, map->GetScriptId(), tmpscript, NULL);
-    return tmpscript->OnGetInstanceData(map);
+    return tmpscript->GetInstanceScript(map);
 }
 
 bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Item* target)
@@ -669,7 +669,7 @@ CreatureAI* ScriptMgr::GetCreatureAI(Creature* creature)
     ASSERT(creature);
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, NULL);
-    return tmpscript->OnGetAI();
+    return tmpscript->GetAI(creature);
 }
 
 void ScriptMgr::OnCreatureUpdate(Creature* creature, uint32 diff)
@@ -776,7 +776,7 @@ bool ScriptMgr::OnTrigger(Player* player, AreaTriggerEntry const* trigger)
     ASSERT(player);
     ASSERT(trigger);
 
-    GET_SCRIPT_RET(AreaTriggerScript, trigger->id, tmpscript, false);
+    GET_SCRIPT_RET(AreaTriggerScript, sObjectMgr.GetAreaTriggerScriptId(trigger->id), tmpscript, false);
     return tmpscript->OnTrigger(player, trigger);
 }
 
@@ -1005,6 +1005,12 @@ GroupScript::GroupScript(const char* name)
     : ScriptObject(name)
 {
     ScriptMgr::ScriptRegistry<GroupScript>::AddScript(this);
+}
+
+PlayerScript::PlayerScript(const char* name)
+	: ScriptObject(name)
+{
+	ScriptMgr::ScriptRegistry<PlayerScript>::AddScript(this);
 }
 
 // Group

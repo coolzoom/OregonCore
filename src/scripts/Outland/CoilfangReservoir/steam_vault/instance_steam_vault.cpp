@@ -39,13 +39,6 @@ EndScriptData */
 */
 
 
-
-
-
-
-
-
-
 class go_main_chambers_access_panel : public GameObjectScript
 {
 public: 
@@ -67,15 +60,13 @@ public:
     
         return true;
     }
-    
-    
-    
+
 };
 
 class instance_steam_vault : public InstanceMapScript
 {
 public: 
-    instance_steam_vault() : InstanceMapScript("instance_steam_vault") { }
+    instance_steam_vault() : InstanceMapScript("instance_steam_vault", 545) { }
     
 
     struct instance_steam_vaultAI : public ScriptedInstance
@@ -281,13 +272,10 @@ public:
             OUT_LOAD_INST_DATA_COMPLETE;
         }
     };
-    InstanceData* GetInstanceData_instance_steam_vault(Map* map)
-    {
-        return new instance_steam_vaultAI(map);
+    InstanceData* GetInstanceScript(InstanceMap* pMap) const override    
+	{
+        return new instance_steam_vaultAI(pMap);
     }
-    
-    
-    
 };
 
 
@@ -295,6 +283,5 @@ void AddSC_instance_steam_vault()
 {
     new go_main_chambers_access_panel();
     new instance_steam_vault();
-
 }
 

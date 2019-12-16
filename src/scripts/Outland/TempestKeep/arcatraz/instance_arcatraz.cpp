@@ -232,7 +232,7 @@ public:
         }
     };
     
-    InstanceData* GetInstanceData_instance_arcatrazAI(Map* map)
+    InstanceData* GetInstanceScript(InstanceMap* map) const override
     {
         return new instance_arcatrazAI(map);
     }
