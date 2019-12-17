@@ -32,6 +32,8 @@
 #include "UpdateMask.h"
 #include "MapManager.h"
 #include "SpellMgr.h"
+#include "ScriptMgr.h"
+#include "LuaEngine.h"
 
 bool ChatHandler::load_command_table = true;
 
@@ -354,6 +356,8 @@ ChatCommand* ChatHandler::getCommandTable()
         { "waypoint_scripts",            SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadWpScriptsCommand,               "", NULL },
         { "gm_tickets",                  SEC_ADMINISTRATOR, true,  &ChatHandler::HandleGMTicketReloadCommand,                "", NULL },
         { "account_referred",            SEC_ADMINISTRATOR, true,  &ChatHandler::HandleRAFReloadCommand,                     "", NULL },
+
+        { "eluna",                       SEC_ADMINISTRATOR, true, &ChatHandler::HandleElunaReloadCommand,                    "", NULL },
 
         { "",                            SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadCommand,                        "", NULL },
         { NULL,                          0,                 false, NULL,                                                     "", NULL }
@@ -863,6 +867,15 @@ void ChatHandler::PSendSysMessage(const char* format, ...)
     SendSysMessage(str);
 }
 
+bool ChatHandler::ExecuteCommandInTables(std::vector<ChatCommand*>& tables, const char* text, const std::string& fullcmd)
+{
+    for (std::vector<ChatCommand*>::iterator it = tables.begin(); it != tables.end(); ++it)
+        if (ExecuteCommandInTable((*it), text, fullcmd))
+            return true;
+
+    return false;
+}
+
 bool ChatHandler::ExecuteCommandInTable(ChatCommand* table, const char* text, const std::string& fullcmd)
 {
     char const* oldtext = text;
@@ -886,6 +899,9 @@ bool ChatHandler::ExecuteCommandInTable(ChatCommand* table, const char* text, co
         {
             if (!ExecuteCommandInTable(table[i].ChildCommands, text, fullcmd))
             {
+                if (!sEluna->OnCommand(m_session ? m_session->GetPlayer() : NULL, fullcmd.c_str()))
+                    return true;
+
                 if (text && text[0] != '\0')
                     SendSysMessage(LANG_NO_SUBCMD);
                 else
@@ -940,6 +956,9 @@ int ChatHandler::ParseCommands(const char* text)
 
     std::string fullcmd = text;
 
+    if (m_session && m_session->GetSecurity() <= SEC_PLAYER)
+        return 0;
+
     // chat case (.command or !command format)
     if (m_session)
     {
@@ -962,9 +981,20 @@ int ChatHandler::ParseCommands(const char* text)
 
     if (!ExecuteCommandInTable(getCommandTable(), text, fullcmd))
     {
+        if (!sEluna->OnCommand(m_session ? m_session->GetPlayer() : NULL, text))
+            return true;
+
         if (m_session && m_session->GetSecurity() == SEC_PLAYER)
             return 0;
+
         SendSysMessage(LANG_NO_CMD);
+        std::vector<ChatCommand*> table = sScriptMgr.GetChatCommands();
+        if (!ExecuteCommandInTables(table, text, fullcmd))
+        {
+            if (m_session && m_session->GetSecurity() == SEC_PLAYER)
+                return 0;
+            SendSysMessage(LANG_NO_CMD);
+        }
     }
     return 1;
 }

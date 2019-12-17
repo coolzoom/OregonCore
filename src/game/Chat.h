@@ -98,7 +98,8 @@ class ChatHandler
         void SendGlobalSysMessage(const char* str);
         void SendGlobalGMSysMessage(const char* str);
 
-        bool ExecuteCommandInTable(ChatCommand* table, const char* text, const std::string& fullcommand);
+        bool ExecuteCommandInTables(std::vector<ChatCommand*>& tables, const char* text, const std::string& fullcmd);
+        bool ExecuteCommandInTable(ChatCommand *table, const char* text, const std::string& fullcmd);
         bool ShowHelpForCommand(ChatCommand* table, const char* cmd);
         bool ShowHelpForSubCommands(ChatCommand* table, char const* cmd, char const* subcmd);
 
@@ -310,6 +311,8 @@ class ChatHandler
         bool HandleReloadLocalesQuestCommand(const char* args);
         bool HandleReloadAuctionsCommand(const char* args);
         bool HandleReloadConditions(const char* args);
+
+        bool HandleElunaReloadCommand(const char* args);
 
         bool HandleInstanceListBindsCommand(const char* args);
         bool HandleInstanceUnbindCommand(const char* args);

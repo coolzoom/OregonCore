@@ -64,6 +64,8 @@
 #include "ConditionMgr.h"
 #include "ScriptMgr.h"
 #include "PoolMgr.h"
+#include "LuaEngine.h"
+#include "../Custom/CrossfactionBG/CrossfactionBG.h"
 
 #include <cmath>
 
@@ -950,6 +952,8 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     }
     // all item positions resolved
 
+    sCrossFaction.SetFakeValues(this);
+
     return true;
 }
 
@@ -1590,7 +1594,8 @@ bool Player::BuildEnumData(QueryResult_AutoPtr result, WorldPacket*  p_data)
 
     *p_data << uint32(char_flags);                          // character flags
 
-    *p_data << uint8(1);                                    // unknown
+    // First login
+    *p_data << uint8(atLoginFlags & AT_LOGIN_FIRST ? 1 : 0);
 
     // Pets info
     {
@@ -2413,6 +2418,35 @@ void Player::SetInWater(bool apply)
     getHostileRefManager().updateThreatTables();
 }
 
+void Player::InitDisplayIds()
+{
+    PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
+    if (!info)
+    {
+        sLog.outError("Player has incorrect race/class pair. Not loaded.");
+        return;
+    }
+
+    //Reset scale
+    this->SetObjectScale(1.0f);
+
+    uint8 gender = getGender();
+    switch (gender)
+    {
+    case GENDER_FEMALE:
+        SetDisplayId(info->displayId_f);
+        SetNativeDisplayId(info->displayId_f);
+        break;
+    case GENDER_MALE:
+        SetDisplayId(info->displayId_m);
+        SetNativeDisplayId(info->displayId_m);
+        break;
+    default:
+        sLog.outError("Invalid gender %u for player", gender);
+        return;
+    }
+}
+
 bool Player::IsInAreaTriggerRadius(const AreaTriggerEntry* trigger) const
 {
     if (!trigger || GetMapId() != trigger->mapid)
@@ -2581,6 +2615,9 @@ void Player::GiveXP(uint32 xp, Unit* victim, bool disableRafBonus)
 
     uint32 level = getLevel();
 
+    // used by eluna
+    sEluna->OnGiveXP(this, xp, victim);
+
     sScriptMgr.OnGivePlayerXP(this, xp, victim);
 
     // XP to money conversion processed in Player::RewardQuest
@@ -2635,6 +2672,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, bool disableRafBonus)
 // Current player experience not update (must be update by caller)
 void Player::GiveLevel(uint32 level, bool ignoreRAF)
 {
+    uint8 oldLevel = getLevel();
     if (level == getLevel())
         return;
 
@@ -2706,6 +2744,16 @@ void Player::GiveLevel(uint32 level, bool ignoreRAF)
     if (!ignoreRAF && sObjectMgr.GetRAFLinkStatus(this) == RAF_LINK_REFERRED)
         while (diff-- > 0)
             SetGrantableLevels(GetGrantableLevels() + sWorld.getRate(RATE_RAF_GRANTABLE_LEVELS_PER_LEVEL));
+
+    // used by eluna
+    sEluna->OnLevelChanged(this, oldLevel);
+}
+
+void Player::SetFreeTalentPoints(uint32 points)
+{
+    // used by eluna
+    sEluna->OnFreeTalentPointsChanged(this, points);
+    SetUInt32Value(PLAYER_CHARACTER_POINTS1, points);
 }
 
 void Player::InitTalentForLevel()
@@ -2736,6 +2784,109 @@ void Player::InitTalentForLevel()
         else
             SetFreeTalentPoints(talentPointsForLevel - m_usedTalentCount);
     }
+}
+
+void Player::LearnTalent(uint32 talentId, uint32 talentRank)
+{
+    uint32 CurTalentPoints = GetFreeTalentPoints();
+
+    if (CurTalentPoints == 0)
+        return;
+
+    if (talentRank > 4)
+        return;
+
+    TalentEntry const* talentInfo = sTalentStore.LookupEntry(talentId);
+
+    if (!talentInfo)
+        return;
+
+    TalentTabEntry const* talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
+
+    if (!talentTabInfo)
+        return;
+
+    // prevent learn talent for different class (cheating)
+    if ((getClassMask() & talentTabInfo->ClassMask) == 0)
+        return;
+
+    // prevent skip talent ranks (cheating)
+    if (talentRank > 0 && !HasSpell(talentInfo->RankID[talentRank - 1]))
+        return;
+
+    // Check if it requires another talent
+    if (talentInfo->DependsOn > 0)
+    {
+        if (TalentEntry const* depTalentInfo = sTalentStore.LookupEntry(talentInfo->DependsOn))
+        {
+            bool hasEnoughRank = false;
+            for (int i = talentInfo->DependsOnRank; i <= 4; i++)
+            {
+                if (depTalentInfo->RankID[i] != 0)
+                    if (HasSpell(depTalentInfo->RankID[i]))
+                        hasEnoughRank = true;
+            }
+            if (!hasEnoughRank)
+                return;
+        }
+    }
+
+    // Check if it requires spell
+    if (talentInfo->DependsOnSpell && !HasSpell(talentInfo->DependsOnSpell))
+        return;
+
+    // Find out how many points we have in this field
+    uint32 spentPoints = 0;
+
+    uint32 tTab = talentInfo->TalentTab;
+    if (talentInfo->Row > 0)
+    {
+        unsigned int numRows = sTalentStore.GetNumRows();
+        for (unsigned int i = 0; i < numRows; i++)          // Loop through all talents.
+        {
+            // Someday, someone needs to revamp
+            const TalentEntry* tmpTalent = sTalentStore.LookupEntry(i);
+            if (tmpTalent)                                  // the way talents are tracked
+            {
+                if (tmpTalent->TalentTab == tTab)
+                {
+                    for (int j = 0; j <= 4; j++)
+                    {
+                        if (tmpTalent->RankID[j] != 0)
+                        {
+                            if (HasSpell(tmpTalent->RankID[j]))
+                                spentPoints += j + 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // not have required min points spent in talent tree
+    if (spentPoints < (talentInfo->Row * 5))
+        return;
+
+    // spell not set in talent.dbc
+    uint32 spellid = talentInfo->RankID[talentRank];
+    if (spellid == 0)
+    {
+        sLog.outError("Talent.dbc have for talent: %u Rank: %u spell id = 0", talentId, talentRank);
+        return;
+    }
+
+    // already known
+    if (HasSpell(spellid))
+        return;
+
+    // learn! (other talent ranks will unlearned at learning)
+    LearnSpell(spellid);
+    sLog.outDetail("TalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
+
+    // update free talent points
+    SetFreeTalentPoints(CurTalentPoints - 1);
+
+    sEluna->OnLearnTalents(this, talentId, talentRank, spellid);
 }
 
 void Player::InitStatsForLevel(bool reapplyMods)
@@ -3500,6 +3651,22 @@ void Player::RemoveSpellCooldown(uint32 spell_id, bool update /* = false */)
         SendClearCooldown(spell_id, this);
 }
 
+void Player::RemoveSpellCategoryCooldown(uint32 cat, bool update /* = false */)
+{
+    SpellCategoryStore::const_iterator ct = sSpellCategoryStore.find(cat);
+    if (ct == sSpellCategoryStore.end())
+        return;
+
+    const SpellCategorySet& ct_set = ct->second;
+    for (SpellCooldowns::const_iterator i = m_spellCooldowns.begin(); i != m_spellCooldowns.end();)
+    {
+        if (ct_set.find(i->first) != ct_set.end())
+            RemoveSpellCooldown((i++)->first, update);
+        else
+            ++i;
+    }
+}
+
 void Player::RemoveArenaSpellCooldowns()
 {
     // remove cooldowns on spells that has < 15 min CD
@@ -3650,6 +3817,9 @@ uint32 Player::ResetTalentsCost() const
 
 bool Player::ResetTalents(bool no_cost)
 {
+    // used by eluna
+    sEluna->OnTalentsReset(this, no_cost);
+
     sScriptMgr.OnPlayerTalentsReset(this, no_cost);
 
     // not need after this call
@@ -4370,6 +4540,8 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     UpdateObjectVisibility();
 
     setDeathState(ALIVE);
+
+    sEluna->OnResurrect(this);
 
     // some items limited to specific map
     DestroyZoneLimitedItem(true, GetZoneId());
@@ -5730,6 +5902,18 @@ uint16 Player::GetBaseSkillValue(uint32 skill) const
     return result < 0 ? 0 : result;
 }
 
+int16 Player::GetSkillPermBonusValue(uint32 skill) const
+{
+    if (!skill)
+        return 0;
+
+    SkillStatusMap::const_iterator itr = mSkillStatus.find(skill);
+    if (itr == mSkillStatus.end() || itr->second.uState == SKILL_DELETED)
+        return 0;
+
+    return SKILL_PERM_BONUS(GetUInt32Value(PLAYER_SKILL_BONUS_INDEX(itr->second.pos)));
+}
+
 uint16 Player::GetPureSkillValue(uint32 skill) const
 {
     if (!skill)
@@ -6364,6 +6548,20 @@ void Player::ModifyArenaPoints(int32 value, bool update)
         CharacterDatabase.PExecute("UPDATE characters SET arenaPoints = arenaPoints + '%u' WHERE guid = '%u'", value, GetGUIDLow());
 }
 
+void Player::SetHonorPoints(uint32 value)
+{
+    if (value > sWorld.getConfig(CONFIG_MAX_HONOR_POINTS))
+        value = sWorld.getConfig(CONFIG_MAX_HONOR_POINTS);
+    SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, value);
+}
+
+void Player::SetArenaPoints(uint32 value)
+{
+    if (value > sWorld.getConfig(CONFIG_MAX_ARENA_POINTS))
+        value = sWorld.getConfig(CONFIG_MAX_ARENA_POINTS);
+    SetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY, value);
+}
+
 uint32 Player::GetGuildIdFromDB(uint64 guid)
 {
     std::ostringstream ss;
@@ -6494,6 +6692,9 @@ void Player::UpdateZone(uint32 newZone)
             Weather::SendFineWeatherUpdateToPlayer(this);
     }
 
+    // used by eluna
+    sEluna->OnUpdateZone(this, newZone, GetAreaId());
+
     // in PvP, any not controlled zone (except zone->team == 6, default case)
     // in PvE, only opposition team capital
     switch (zone->team)
@@ -6609,6 +6810,9 @@ void Player::DuelComplete(DuelCompleteType type)
         data << GetName();
         SendMessageToSet(&data, true);
     }
+
+    // used by eluna
+    sEluna->OnDuelEnd(duel->opponent, this, type);
 
     switch (type)
     {
@@ -8744,6 +8948,36 @@ Item* Player::GetItemByGuid(uint64 guid) const
     return NULL;
 }
 
+Item* Player::GetItemByEntry(uint32 entry) const
+{
+    // in inventory
+    for (int i = INVENTORY_SLOT_ITEM_START; i < INVENTORY_SLOT_ITEM_END; ++i)
+        if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+            if (pItem->GetEntry() == entry)
+                return pItem;
+
+    for (uint8 i = KEYRING_SLOT_START; i < KEYRING_SLOT_END; ++i)
+        if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+            if (pItem->GetEntry() == entry)
+                return pItem;
+
+    for (int i = INVENTORY_SLOT_BAG_START; i < INVENTORY_SLOT_BAG_END; ++i)
+        if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+            for (uint32 j = 0; j < pBag->GetBagSize(); ++j)
+                if (Item* pItem = pBag->GetItemByPos(j))
+                    if (pItem->GetEntry() == entry)
+                        return pItem;
+
+    for (uint8 i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
+        if (Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+            for (uint32 j = 0; j < pBag->GetBagSize(); ++j)
+                if (Item* pItem = pBag->GetItemByPos(j))
+                    if (pItem->GetEntry() == entry)
+                        return pItem;
+
+    return NULL;
+}
+
 Item* Player::GetItemByPos(uint16 pos) const
 {
     uint8 bag = pos >> 8;
@@ -10308,6 +10542,10 @@ uint8 Player::CanUseItem(Item* pItem, bool not_loading) const
             if (getLevel() < pProto->RequiredLevel)
                 return EQUIP_ERR_CANT_EQUIP_LEVEL_I;
 
+            uint8 eres = sEluna->OnCanUseItem(this, pProto->ItemId);
+            if (eres != EQUIP_ERR_OK)
+                return eres;
+
             return EQUIP_ERR_OK;
         }
     }
@@ -10333,6 +10571,11 @@ bool Player::CanUseItem(ItemTemplate const* pProto)
             return false;
         if (getLevel() < pProto->RequiredLevel)
             return false;
+
+        uint8 eres = sEluna->OnCanUseItem(this, pProto->ItemId);
+        if (eres != EQUIP_ERR_OK)
+            return false;
+
         return true;
     }
     return false;
@@ -10662,8 +10905,14 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         ApplyEquipCooldown(pItem2);
 
+        // used by eluna
+        sEluna->OnEquip(this, pItem2, bag, slot);
+
         return pItem2;
     }
+
+    // used by eluna
+    sEluna->OnEquip(this, pItem, bag, slot);
 
     return pItem;
 }
@@ -10880,6 +11129,8 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
         RemoveItemDurations(pItem);
 
         ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
+
+        sEluna->OnRemove(this, pItem);
 
         if (bag == INVENTORY_SLOT_BAG_0)
         {
@@ -13302,6 +13553,16 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
     if (announce)
         SendQuestReward(pQuest, XP, questGiver);
 
+    switch (questGiver->GetTypeId())
+    {
+    case TYPEID_UNIT:
+        sEluna->OnQuestReward(this, (Creature*)questGiver, pQuest, reward);
+        break;
+    case TYPEID_GAMEOBJECT:
+        sEluna->OnQuestReward(this, (GameObject*)questGiver, pQuest, reward);
+        break;
+    }
+
     // cast spells after mark quest complete (some spells have quest completed state requirements in spell_area data)
     if (pQuest->GetRewSpellCast() > 0)
     {
@@ -14300,10 +14561,10 @@ void Player::SendQuestReward(Quest const* pQuest, uint32 XP, Object* questGiver)
     sGameEventMgr.HandleQuestComplete(questid);
 
     if (questGiver->GetTypeId() == TYPEID_UNIT)
-        sScriptMgr.QuestComplete(this, questGiver->ToCreature(), pQuest);
+        sScriptMgr.OnQuestComplete(this, questGiver->ToCreature(), pQuest);
     else
         if (questGiver->GetTypeId() == TYPEID_GAMEOBJECT)
-            sScriptMgr.QuestComplete(this, questGiver->ToGameObject(), pQuest);
+            sScriptMgr.OnQuestComplete(this, questGiver->ToGameObject(), pQuest);
 
     WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, (4 + 4 + 4 + 4 + 4 + 4 + pQuest->GetRewItemsCount() * 8));
     data << questid;
@@ -14669,6 +14930,8 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder* holder)
     //Need to call it to initialize m_team (m_team can be calculated from race)
     //Other way is to saves m_team into characters table.
     setFactionForRace(getRace());
+
+    sCrossFaction.SetFakeValues(this);
 
     // load home bind and check in same time class/race pair, it used later for restore broken positions
     if (!_LoadHomeBind(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHOMEBIND)))
@@ -16073,6 +16336,9 @@ InstancePlayerBind* Player::BindToInstance(InstanceSave* save, bool permanent, b
             DEBUG_LOG("Player::BindToInstance: %s(%d) is now bound to map %d, instance %d, difficulty %d", GetName(), GetGUIDLow(), save->GetMapId(), save->GetInstanceId(), save->GetDifficulty());
         #endif
 
+        // used by eluna
+        sEluna->OnBindToInstance(this, save->GetDifficulty(), save->GetMapId(), permanent);
+
         return &bind;
     }
     else
@@ -16398,7 +16664,7 @@ void Player::SaveToDB()
     uint32 mapid = IsBeingTeleported() ? GetTeleportDest().GetMapId() : GetMapId();
     const MapEntry* me = sMapStore.LookupEntry(mapid);
     // players aren't saved on arena maps
-    if (!me || me->IsBattleArena())
+    if (!me || me->IsBattleArena() || me->IsBattleground())
         return;
 
     int is_save_resting = HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) ? 1 : 0;
@@ -16420,6 +16686,10 @@ void Player::SaveToDB()
     SetByteValue(UNIT_FIELD_BYTES_1, 3, 0);                 // stand flags?
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
     SetDisplayId(GetNativeDisplayId());
+
+    // Hack to check that this is not on create save
+    if (!HasAtLoginFlag(AT_LOGIN_FIRST))
+        sEluna->OnSave(this);
 
     std::string sql_name = m_name;
     CharacterDatabase.escape_string(sql_name);
@@ -17255,6 +17525,9 @@ void Player::UpdateDuelFlag(time_t currTime)
 {
     if (!duel || duel->startTimer == 0 || currTime < duel->startTimer + 3)
         return;
+
+    // used by eluna
+    sEluna->OnDuelStart(this, duel->opponent);
 
     SetUInt32Value(PLAYER_DUEL_TEAM, 1);
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);
@@ -20726,6 +20999,29 @@ void Player::SetHomebindToLocation(WorldLocation const& loc, uint32 area_id)
     // update sql homebind
     CharacterDatabase.PExecute("UPDATE character_homebind SET map = '%u', zone = '%u', position_x = '%f', position_y = '%f', position_z = '%f' WHERE guid = '%u'",
                                m_homebindMapId, m_homebindAreaId, m_homebindX, m_homebindY, m_homebindZ, GetGUIDLow());
+}
+
+void Player::ModifyMoney(int32 d)
+{
+    // used by eluna
+    sEluna->OnMoneyChanged(this, d);
+
+    if (d < 0)
+        SetMoney(GetMoney() > uint32(-d) ? GetMoney() + d : 0);
+    else
+        SetMoney(GetMoney() < uint32(MAX_MONEY_AMOUNT - d) ? GetMoney() + d : MAX_MONEY_AMOUNT);
+
+    // "At Gold Limit"
+    if (GetMoney() >= MAX_MONEY_AMOUNT)
+        SendEquipError(EQUIP_ERR_TOO_MUCH_GOLD, NULL, NULL);
+}
+
+void Player::RemoveAtLoginFlag(AtLoginFlags f, bool in_db_also /*= false*/)
+{
+    m_atLoginFlags &= ~f;
+
+    if (in_db_also)
+        CharacterDatabase.PExecute("UPDATE characters set at_login = at_login & ~ %u WHERE guid ='%u'", uint32(f), GetGUIDLow());
 }
 
 void Player::_SaveBGData()

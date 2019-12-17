@@ -30,6 +30,7 @@
 #include "ObjectMgr.h"
 #include "DynamicTree.h"
 #include "MoveMap.h"
+#include "LuaEngine.h"
 
 #define DEFAULT_GRID_EXPIRY     300
 #define MAX_GRID_LOAD_TIME      50
@@ -39,6 +40,11 @@ GridState* si_GridStates[MAX_GRID_STATE];
 
 Map::~Map()
 {
+    if (!Instanceable())
+        sScriptMgr.OnDestroyMap(this);
+
+    sEluna->OnDestroy(this);
+
     UnloadAll();
 
     while (!i_worldObjects.empty())
@@ -48,10 +54,14 @@ Map::~Map()
         //ASSERT(obj->GetTypeId() == TYPEID_CORPSE);
         obj->RemoveFromWorld();
         obj->ResetMap();
+        //sScriptMgr.OnUnloadGridMap(this, gx, gy);
     }
 
     if (!m_scriptSchedule.empty())
         sWorld.DecreaseScheduledScriptCount(m_scriptSchedule.size());
+
+    if (Instanceable())
+        sEluna->FreeInstanceId(GetInstanceId());
 
     MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(GetId(), i_InstanceId);
 }
@@ -133,6 +143,7 @@ void Map::LoadVMap(int gx, int gy)
         DEBUG_LOG("Ignored VMAP name:%s, id:%d, x:%d, y:%d (vmap rep.: x:%d, y:%d)", GetMapName(), GetId(), gx, gy, gx, gy);
         break;
     }
+
 }
 
 void Map::LoadMap(int gx, int gy, bool reload)
@@ -158,6 +169,8 @@ void Map::LoadMap(int gx, int gy, bool reload)
     if (GridMaps[gx][gy])
     {
         sLog.outDetail("Unloading previously loaded map %u before reloading.", GetId());
+
+        sScriptMgr.OnUnloadGridMap(this, gx, gy);
         delete (GridMaps[gx][gy]);
         GridMaps[gx][gy] = nullptr;
     }
@@ -173,6 +186,8 @@ void Map::LoadMap(int gx, int gy, bool reload)
     if (!GridMaps[gx][gy]->loadData(tmp))
         sLog.outError("Error loading map file: \n %s\n", tmp);
     delete [] tmp;
+
+    sScriptMgr.OnLoadGridMap(this, gx, gy);
 }
 
 void Map::LoadMapAndVMap(int gx, int gy)
@@ -223,6 +238,11 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode, Map* _par
 
     //lets initialize visibility distance for map
     Map::InitVisibilityDistance();
+
+    if (!Instanceable())
+        sScriptMgr.OnCreateMap(this);
+
+    sEluna->OnCreate(this);
 }
 
 void Map::InitVisibilityDistance()
@@ -418,6 +438,10 @@ bool Map::AddPlayerToMap(Player* player)
 
     player->m_clientGUIDs.clear();
     player->UpdateObjectVisibility(false);
+    sScriptMgr.OnPlayerEnter(this, player);
+
+    sEluna->OnMapChanged(player);
+    sEluna->OnPlayerEnter(this, player);
 
     return true;
 }
@@ -579,6 +603,10 @@ void Map::Update(const uint32& t_diff)
 
     if (!m_mapRefManager.isEmpty() || !m_activeNonPlayers.empty())
         ProcessRelocationNotifies(t_diff);
+
+    sEluna->OnUpdate(this, t_diff);
+
+    sScriptMgr.OnMapUpdate(this, t_diff);
 }
 
 struct ResetNotifier
@@ -691,11 +719,16 @@ void Map::RemovePlayerFromMap(Player* player, bool remove)
 
     if (remove)
         DeleteFromWorld(player);
+
+    sScriptMgr.OnPlayerLeave(this, player);
 }
 
 template<class T>
 void Map::RemoveFromMap(T *obj, bool remove)
 {
+    if (obj->ToPlayer());
+        sEluna->OnPlayerLeave(this, obj->ToPlayer());
+
     obj->RemoveFromWorld();
     if (obj->isActiveObject())
         RemoveFromActive(obj);
@@ -2053,6 +2086,11 @@ void Map::AddObjectToRemoveList(WorldObject* obj)
 {
     ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
 
+    if (Creature* creature = obj->ToCreature())
+        sEluna->OnRemove(creature);
+    else if (GameObject* gameobject = obj->ToGameObject())
+        sEluna->OnRemove(gameobject);
+
     obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
 
     i_objectsToRemove.insert(obj);
@@ -2436,15 +2474,20 @@ void InstanceMap::CreateInstanceData(bool load)
     if (i_data != NULL)
         return;
 
-    InstanceTemplate const* mInstance = sObjectMgr.GetInstanceTemplate(GetId());
-    if (mInstance)
-    {
-        i_script_id = mInstance->script_id;
-        i_data = sScriptMgr.CreateInstanceData(this);
-    }
+    i_data = sEluna->GetInstanceData(this);
 
     if (!i_data)
-        return;
+    {
+        InstanceTemplate const* mInstance = sObjectMgr.GetInstanceTemplate(GetId());
+        if (mInstance)
+        {
+            i_script_id = mInstance->script_id;
+            i_data = sScriptMgr.CreateInstanceData(this);
+        }
+
+        if (!i_data)
+            return;
+    }
 
     i_data->Initialize();
 

@@ -41,6 +41,7 @@
 #include "CreatureAI.h"
 #include "GameObjectAI.h"
 #include "AccountMgr.h"
+#include "LuaEngine.h"
 
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
 {
@@ -61,6 +62,9 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
         DEBUG_LOG("HandleRepopRequestOpcode: got request after player %s(%d) was killed and before he was updated", GetPlayer()->GetName(), GetPlayer()->GetGUIDLow());
         GetPlayer()->KillPlayer();
     }
+
+    // used by eluna
+    sEluna->OnRepop(GetPlayer());
 
     //this is spirit release confirm?
     GetPlayer()->RemovePet(NULL, PET_SAVE_NOT_IN_SLOT, true);
@@ -109,6 +113,32 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
     }
     else
     {
+        if (IS_ITEM_GUID(guid))
+        {
+            Item* item = GetPlayer()->GetItemByGuid(guid);
+            if (!item)
+            {
+                DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - %s not found or you can't interact with it.", guid.GetString().c_str());
+                return;
+            }
+
+            // used by eluna
+            sEluna->HandleGossipSelectOption(GetPlayer(), item, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
+            return;
+        }
+        else if (IS_PLAYER_GUID(guid))
+        {
+            if (GetPlayer()->GetGUIDLow() != guid || GetPlayer()->PlayerTalkClass->GetGossipMenu().GetMenuId() != menuId)
+            {
+                DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - %s not found or you can't interact with it.", guid.GetString().c_str());
+                return;
+            }
+
+            // used by eluna
+            sEluna->HandleGossipSelectOption(GetPlayer(), menuId, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
+            return;
+        }
+
         DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - unsupported GUID type for highguid %u. lowpart %u.", uint32(GUID_HIPART(guid)), uint32(GUID_LOPART(guid)));
         return;
     }
@@ -122,13 +152,13 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
         if (unit)
         {
             unit->AI()->sGossipSelectCode(_player, menuId, gossipListId, code.c_str());
-            if (!sScriptMgr.GossipSelectWithCode(_player, unit, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId), code.c_str()))
+            if (!sScriptMgr.OnGossipSelectCode(_player, unit, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId), code.c_str()))
                 _player->OnGossipSelect(unit, gossipListId, menuId);
         }
         else
         {
             go->AI()->GossipSelectCode(_player, menuId, gossipListId, code.c_str());
-            sScriptMgr.GOSelectWithCode(_player, go, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId), code.c_str());
+            sScriptMgr.OnGossipSelectCode(_player, go, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId), code.c_str());
         }
     }
     else
@@ -136,13 +166,13 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
         if (unit)
         {
             unit->AI()->sGossipSelect(_player, menuId, gossipListId);
-            if (!sScriptMgr.GossipSelect(_player, unit, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId)))
+            if (!sScriptMgr.OnGossipSelect(_player, unit, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId)))
                 _player->OnGossipSelect(unit, gossipListId, menuId);
         }
         else
         {
             go->AI()->GossipSelect(_player, menuId, gossipListId);
-            sScriptMgr.GOSelect(_player, go, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId));
+            sScriptMgr.OnGossipSelect(_player, go, _player->PlayerTalkClass->GossipOptionSender(gossipListId), _player->PlayerTalkClass->GossipOptionAction(gossipListId));
         }
     }
 }
@@ -801,7 +831,7 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recv_data)
         return;
     }
 
-    if (sScriptMgr.AreaTrigger(GetPlayer(), atEntry))
+    if (sScriptMgr.OnTrigger(GetPlayer(), atEntry))
         return;
 
     if (GetPlayer()->IsAlive())

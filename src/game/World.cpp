@@ -66,6 +66,7 @@
 #include "ConditionMgr.h"
 #include "VMapManager2.h"
 #include "M2Stores.h"
+#include "LuaEngine.h"
 
 #include <ace/Dirent.h>
 
@@ -1050,6 +1051,9 @@ void World::LoadConfigSettings(bool reload)
     // Battleground
     m_configs[CONFIG_BATTLEGROUND_CAST_DESERTER] = sConfig.GetBoolDefault("Battleground.CastDeserter", true);
     m_configs[CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_ENABLE] = sConfig.GetBoolDefault("Battleground.QueueAnnouncer.Enable", false);
+    m_configs[CONFIG_CROSSFACTION_BG_ENABLE] = sConfig.GetBoolDefault("Battleground.CrossFaction.Enable", false);
+    m_configs[CONFIG_CROSSFACTION_REPLACE_RACIALS] = sConfig.GetBoolDefault("Battleground.CrossFaction.ReplaceRacials", false);
+    m_configs[CONFIG_CROSSFACTION_REPLACE_LANGUAGE] = sConfig.GetBoolDefault("Battleground.Crossfaction.RepalceLanguage", false);
     m_configs[CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_PLAYERONLY] = sConfig.GetBoolDefault("Battleground.QueueAnnouncer.PlayerOnly", false);
     m_configs[CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_ONSTART] = sConfig.GetBoolDefault("Battleground.QueueAnnouncer.OnStart", false);
     m_configs[CONFIG_BATTLEGROUND_PREMATURE_REWARD] = sConfig.GetBoolDefault("Battleground.PrematureReward", true);
@@ -1073,6 +1077,10 @@ void World::LoadConfigSettings(bool reload)
     #else
         m_SQLUpdatesPath += '/';
     #endif
+
+    m_configs[CONFIG_BOOL_ELUNA_ENABLED] = sConfig.GetBoolDefault("Eluna.Enabled", true);
+    if (reload)
+        sEluna->OnConfigLoad(reload);
 }
 
 void World::LoadSQLUpdates()
@@ -1269,6 +1277,10 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadGossipMenuItemsLocales();
     sObjectMgr.SetDBCLocaleIndex(GetDefaultDbcLocale());        // Get once for all the locale index of DBC language (console/broadcasts)
     sConsole.SetLoadingLabel(">>> Localization strings loaded");
+
+    ///- Initialize Lua Engine
+    sLog.outString("Initialize Eluna Lua Engine...");
+    Eluna::Initialize();
 
     sConsole.SetLoadingLabel("Loading Page Texts...");
     sObjectMgr.LoadPageTexts();
@@ -1648,6 +1660,12 @@ void World::SetInitialWorldSettings()
     sConsole.SetLoadingLabel("Initialize AuctionHouseBot...", false);
     auctionbot.Initialize();
 
+    ///- Run eluna scripts.
+    // in multithread foreach: run scripts
+    sEluna->RunScripts();
+    sEluna->OnConfigLoad(false); // Must be done after Eluna is initialized and scripts have run
+    sLog.outString();
+
     // Delete all characters which have been deleted X days before
     Player::DeleteOldCharacters();
 
@@ -1934,6 +1952,9 @@ void World::Update(uint32 diff)
     sOutdoorPvPMgr.Update(diff);
     RecordTimeDiff("UpdateOutdoorPvPMgr");
 
+    ///- used by eluna
+    sEluna->OnWorldUpdate(diff);
+
     ///- Delete all characters which have been deleted X days before
     if (m_timers[WUPDATE_DELETECHARS].Passed())
     {
@@ -1966,6 +1987,9 @@ void World::Update(uint32 diff)
 
     // And last, but not least handle the issued cli commands
     ProcessCliCommands();
+
+    ///- used by eluna
+    sEluna->OnWorldUpdate(diff);
 }
 
 void World::ForceGameEventUpdate()
@@ -2350,6 +2374,9 @@ void World::ShutdownServ(uint32 time, uint32 options, uint8 exitcode)
         m_ShutdownTimer = time;
         ShutdownMsg(true);
     }
+
+    ///- Used by Eluna
+    sEluna->OnShutdownInitiate(ShutdownExitCode(exitcode), ShutdownMask(options));
 }
 
 // Display a shutdown message to the user(s)
@@ -2392,6 +2419,9 @@ void World::ShutdownCancel()
     SendServerMessage(msgid);
 
     DEBUG_LOG("Server %s cancelled.", (m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutdown"));
+
+    ///- Used by Eluna
+    sEluna->OnShutdownCancel();
 }
 
 // Send a server message to the user(s)
