@@ -1,0 +1,1 @@
+void Addmax_skillsScripts();

@@ -1,0 +1,3 @@
+AC_ADD_SCRIPT("${CMAKE_CURRENT_LIST_DIR}/max_skills.cpp")
+AC_ADD_SCRIPT_LOADER("max_skills" "${CMAKE_CURRENT_LIST_DIR}/loader.h")
+
