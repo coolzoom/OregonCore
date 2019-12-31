@@ -2,6 +2,6 @@
 
 @AC_SCRIPTS_INCLUDES@
 
-void AddScripts() {
+void AddModuleScripts() {
     @AC_ADD_SCRIPTS_LIST@
 }
