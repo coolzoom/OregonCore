@@ -331,7 +331,7 @@ void WorldSession::LogoutPlayer(bool Save)
     if (_player)
     {
         //Hook for OnLogout Event
-        sScriptMgr.OnLogout(_player);
+        sScriptMgr.OnPlayerLogout(_player);
 
         if (uint64 lguid = GetPlayer()->GetLootGUID())
             DoLootRelease(lguid);
@@ -451,6 +451,9 @@ void WorldSession::LogoutPlayer(bool Save)
         // Broadcast a logout message to the player's friends
         sSocialMgr.SendFriendStatus(_player, FRIEND_OFFLINE, _player->GetGUIDLow(), true);
         sSocialMgr.RemovePlayerSocial (_player->GetGUIDLow ());
+
+		//! Call script hook before deletion
+		sScriptMgr.OnPlayerLogout(_player);
 
         // Remove the player from the world
         // the player may not be in the world when logging out

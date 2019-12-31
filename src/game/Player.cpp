@@ -14298,10 +14298,10 @@ void Player::SendQuestReward(Quest const* pQuest, uint32 XP, Object* questGiver)
     sGameEventMgr.HandleQuestComplete(questid);
 
     if (questGiver->GetTypeId() == TYPEID_UNIT)
-        sScriptMgr.QuestComplete(this, questGiver->ToCreature(), pQuest);
+        sScriptMgr.OnQuestComplete(this, questGiver->ToCreature(), pQuest);
     else
         if (questGiver->GetTypeId() == TYPEID_GAMEOBJECT)
-            sScriptMgr.QuestComplete(this, questGiver->ToGameObject(), pQuest);
+            sScriptMgr.OnQuestComplete(this, questGiver->ToGameObject(), pQuest);
 
     WorldPacket data(SMSG_QUESTGIVER_QUEST_COMPLETE, (4 + 4 + 4 + 4 + 4 + 4 + pQuest->GetRewItemsCount() * 8));
     data << questid;
@@ -16404,6 +16404,9 @@ void Player::SaveToDB()
     //save, but in tavern/city
     DEBUG_LOG("The value of player %s at save: ", m_name.c_str());
     outDebugValues();
+
+
+	sScriptMgr.OnPlayerSave(this);
 
     // save state (after auras removing), if aura remove some flags then it must set it back by self)
     uint32 tmp_bytes = GetUInt32Value(UNIT_FIELD_BYTES_1);
