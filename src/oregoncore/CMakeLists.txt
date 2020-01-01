@@ -104,3 +104,43 @@ elseif( WIN32 )
   install(TARGETS oregon-core DESTINATION "${CMAKE_INSTALL_PREFIX}")
   install(FILES oregoncore.conf.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")
 endif()
+
+
+# handle config file
+CU_GET_GLOBAL("MODULE_CONFIG_FILE_LIST")
+FOREACH(configFile ${MODULE_CONFIG_FILE_LIST})
+if( WIN32 )
+  if ( MSVC )
+    add_custom_command(TARGET oregon-core
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${configFile}" ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
+    )
+  elseif ( MINGW )
+    add_custom_command(TARGET oregon-core
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${configFile}" ${CMAKE_BINARY_DIR}/bin/
+    )
+  endif()
+endif()
+
+if( UNIX )
+  install(TARGETS oregon-core DESTINATION bin)
+  install(FILES "${configFile}" DESTINATION ${CONF_DIR})
+elseif( WIN32 )
+  install(TARGETS oregon-core DESTINATION "${CMAKE_INSTALL_PREFIX}")
+  install(FILES "${configFile}" DESTINATION "${CMAKE_INSTALL_PREFIX}")
+endif()
+
+
+# install(FILES "${configFile}" DESTINATION ${CONF_DIR})
+ENDFOREACH()
+
+CU_GET_GLOBAL("MODULE_CONFIG_FILE_LIST")
+FOREACH(configFile ${MODULE_CONFIG_FILE_LIST})
+    get_filename_component(file_name ${configFile} NAME_WE)
+    set(CONFIG_LIST ${CONFIG_LIST}${file_name},)
+ENDFOREACH()
+add_definitions(-DCONFIG_FILE_LIST=$<1:"${CONFIG_LIST}">)
+# end handle config file
+
+CU_RUN_HOOK("AFTER_WORLDSERVER_CMAKE")
