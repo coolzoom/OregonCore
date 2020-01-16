@@ -399,6 +399,33 @@ Weather* World::AddWeather(uint32 zone_id)
     return w;
 }
 
+void World::LoadModuleConfig()
+{
+	{
+		QueryResult_AutoPtr result = WorldDatabase.Query("SELECT `id`, `config`, `value` FROM module_config");
+		uint64 count = 0;
+
+		if (result)
+		{
+			do
+			{
+				Field* field = result->Fetch();
+				ModuleConfig mod;
+
+				uint32 id = field[0].GetUInt32();
+				mod.config = field[1].GetString();
+				mod.value = field[2].GetString();
+
+				_moduleConfig[mod.config] = mod;
+
+				count++;
+			} while (result->NextRow());
+		}
+
+		sLog.outString(">> Loaded %lu module config", count);
+	}
+}
+
 // Initialize config values
 void World::LoadConfigSettings(bool reload)
 {
@@ -1187,6 +1214,9 @@ void World::SetInitialWorldSettings()
     // Initialize detour memory management
     dtAllocSetCustom(dtCustomAlloc, dtCustomFree);
 
+	// Initialize module config settings
+	LoadModuleConfig();
+
     // Initialize config settings
     LoadConfigSettings();
 
@@ -1799,6 +1829,43 @@ void World::LoadOpcodeProtection()
 ProtectedOpcodeProperties const& World::GetProtectedOpcodeProperties(uint32 opcode)
 {
     return _protectedOpcodesProperties[opcode];
+}
+
+//sModuleMgr.GetBool(std::string conf, bool, default)
+bool World::GetModuleBoolConfig(std::string conf, bool value)
+{
+	auto it = _moduleConfig.find(conf.c_str());
+
+	ModuleConfig Mod = it->second;
+
+	bool defaultValue = Mod.value.c_str();
+
+	if (defaultValue == value)
+		return true;
+	else
+		return false;
+}
+
+std::string World::GetModuleStringConfig(std::string conf)
+{
+	auto it = _moduleConfig.find(conf.c_str());
+	ModuleConfig Mod = it->second;
+
+	return Mod.value.c_str();
+}
+
+int32 World::GetModuleIntConfig(std::string conf, uint32 value)
+{
+	auto it = _moduleConfig.find(conf.c_str());
+
+	ModuleConfig Mod = it->second;
+
+	uint32 defaultValue = atoi(Mod.value.c_str());
+
+	if (defaultValue != value)
+		return defaultValue;
+	else
+		return value;
 }
 
 // Update the World !

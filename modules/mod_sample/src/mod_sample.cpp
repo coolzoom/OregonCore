@@ -1,6 +1,7 @@
 #include "ScriptMgr.h"
 #include "Config/Config.h"
 #include "Player.h"
+#include "World.h"
 #include "Chat.h"
 
 class modsample : public PlayerScript
@@ -10,9 +11,21 @@ public:
 
 	void OnLogin(Player* player, bool firstLogin) override
 	{
-		if (sConfig.GetBoolDefault("modsample.enableHelloWorld", false)) {
-            ChatHandler(player->GetSession()).SendSysMessage("Module Is working!!");
-        }
+
+		std::string mod = sWorld.GetModuleStringConfig("modsample.stringtest");
+		uint32 number = sWorld.GetModuleIntConfig("modsample.intTest", 10032);
+
+		if (sWorld.GetModuleBoolConfig("modsample.enableHelloWorld", "1"))
+		{
+			ChatHandler(player->GetSession()).SendSysMessage("Module Is working!!");
+			ChatHandler(player->GetSession()).SendSysMessage(mod.c_str());
+			player->AddAura(number, player);
+		}
+		else
+			ChatHandler(player->GetSession()).SendSysMessage("Module Is Not working!!");
+
+
+
 	}
 };
 
