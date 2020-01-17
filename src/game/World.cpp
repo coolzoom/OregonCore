@@ -401,29 +401,29 @@ Weather* World::AddWeather(uint32 zone_id)
 
 void World::LoadModuleConfig()
 {
-	{
-		QueryResult_AutoPtr result = WorldDatabase.Query("SELECT `id`, `config`, `value` FROM module_config");
-		uint64 count = 0;
 
-		if (result)
-		{
-			do
-			{
-				Field* field = result->Fetch();
-				ModuleConfig mod;
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT `id`, `config`, `value` FROM module_config");
+    uint64 count = 0;
 
-				uint32 id = field[0].GetUInt32();
-				mod.config = field[1].GetString();
-				mod.value = field[2].GetString();
+    if (result)
+    {
+        do
+        {
+            Field* field = result->Fetch();
+            ModuleConfig mod;
 
-				_moduleConfig[mod.config] = mod;
+            uint32 id = field[0].GetUInt32();
+            mod.config = field[1].GetString();
+            mod.value = field[2].GetString();
 
-				count++;
-			} while (result->NextRow());
-		}
+            _moduleConfig[mod.config] = mod;
 
-		sLog.outString(">> Loaded %lu module config", count);
-	}
+            count++;
+        } while (result->NextRow());
+    }
+
+    sLog.outString(">> Loaded %lu module config", count);
+
 }
 
 // Initialize config values
@@ -1834,38 +1834,38 @@ ProtectedOpcodeProperties const& World::GetProtectedOpcodeProperties(uint32 opco
 //sModuleMgr.GetBool(std::string conf, bool, default)
 bool World::GetModuleBoolConfig(std::string conf, bool value)
 {
-	auto it = _moduleConfig.find(conf.c_str());
+    auto it = _moduleConfig.find(conf.c_str());
 
-	ModuleConfig Mod = it->second;
+    ModuleConfig Mod = it->second;
 
-	bool defaultValue = Mod.value.c_str();
+    bool defaultValue = Mod.value.c_str();
 
-	if (defaultValue == value)
-		return true;
-	else
-		return false;
+    if (defaultValue == value)
+        return true;
+    else
+        return false;
 }
 
 std::string World::GetModuleStringConfig(std::string conf)
 {
-	auto it = _moduleConfig.find(conf.c_str());
-	ModuleConfig Mod = it->second;
+    auto it = _moduleConfig.find(conf.c_str());
+    ModuleConfig Mod = it->second;
 
-	return Mod.value.c_str();
+    return Mod.value.c_str();
 }
 
 int32 World::GetModuleIntConfig(std::string conf, uint32 value)
 {
-	auto it = _moduleConfig.find(conf.c_str());
+    auto it = _moduleConfig.find(conf.c_str());
 
-	ModuleConfig Mod = it->second;
+    ModuleConfig Mod = it->second;
 
-	uint32 defaultValue = atoi(Mod.value.c_str());
+    uint32 defaultValue = atoi(Mod.value.c_str());
 
-	if (defaultValue != value)
-		return defaultValue;
-	else
-		return value;
+    if (defaultValue != value)
+        return defaultValue;
+    else
+        return value;
 }
 
 // Update the World !
