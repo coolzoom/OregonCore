@@ -1307,12 +1307,16 @@ void World::LoadModSQLUpdates()
                     if (ACE_DIR* dir = ACE_OS::opendir(pathsql.c_str()))
                     {
                         while (ACE_DIRENT* entry = ACE_OS::readdir(dir))
+                        {
+                            // always apply if it is a conf file
+                            if (!strcmp(entry->d_name + strlen(entry->d_name) - 9, ".conf.sql"))
+                                files.push_back(entry->d_name);
                             // continue only if file is not already applied
                             if (alreadyAppliedFiles.find(entry->d_name) == alreadyAppliedFiles.end())
                                 // make sure the file is an .sql one
                                 if (!strcmp(entry->d_name + strlen(entry->d_name) - 4, ".sql"))
                                     files.push_back(entry->d_name);
-
+                        }
                         ACE_OS::closedir(dir);
                     }
                     else
