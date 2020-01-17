@@ -2004,9 +2004,10 @@ bool World::GetModuleBoolConfig(std::string conf, bool value)
 
     ModuleConfig Mod = it->second;
 
-    bool defaultValue = Mod.value.c_str();
-
-    if (defaultValue == value)
+    const char* str = Mod.value.c_str();
+    if (strcmp(str, "true") == 0 || strcmp(str, "TRUE") == 0 ||
+        strcmp(str, "yes") == 0 || strcmp(str, "YES") == 0 ||
+        strcmp(str, "1") == 0)
         return true;
     else
         return false;
