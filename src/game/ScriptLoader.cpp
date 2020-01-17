@@ -399,7 +399,7 @@ void AddScripts()
     //    AddSC_custom_example();
     //    AddSC_custom_gossip_codebox();
     //    AddSC_test();
-	AddModuleScripts();
+    AddModuleScripts();
     AddSC_areatrigger_scripts();
     AddSC_boss_emeriss();
     AddSC_boss_taerar();
