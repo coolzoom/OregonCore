@@ -1,24 +1,9 @@
 # BEST PRACTICES
 
-## Create a new table
+## Create 3 folders, realmd, characters, world
 
-**Example:**
-```
-CREATE TABLE IF NOT EXISTS `table`(
-  `id` int(11) unsigned NOT NULL,
-  `column` smallint(6) unsigned,
-  `active` BOOLEAN DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-```
-
-**Boolean datatype in mysql:**
-Use "TinyInt(1)"" or "Boolean" (this is the same thing)
-
-"bit(1)" can also work, but it may require a syntax like b'(0) and b'(1) when inserting (not sure).
-
-If there are multiple booleans in the same table, bit(1) is better, otherwise it's the same result.
-
+create sql files inside those 3 folders, name them as YYYY_MM_DD_COMMENTS.sql
+adding query inside those file
 
 ## Resources
 

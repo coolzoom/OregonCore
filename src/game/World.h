@@ -792,6 +792,7 @@ class World
         void LoadIp2nation();
         void LoadOpcodeProtection();
         void LoadSQLUpdates();
+        void LoadModSQLUpdates();
 
         ProtectedOpcodeProperties const& GetProtectedOpcodeProperties(uint32 opcode);
     protected:
@@ -871,6 +872,7 @@ class World
 
         std::list<std::string> m_Autobroadcasts;
         std::string m_SQLUpdatesPath;
+        std::string m_ModSQLUpdatesPath;
         UNORDERED_MAP<uint32, ProtectedOpcodeProperties> _protectedOpcodesProperties;
         UNORDERED_MAP<std::string, ModuleConfig> _moduleConfig;
 };
