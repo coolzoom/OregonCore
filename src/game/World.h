@@ -459,6 +459,13 @@ struct ProtectedOpcodeProperties
     OpcodePenalty penalty; //!< What should happen if the threshold per interval is passed.
 };
 
+struct ModuleConfig
+{
+    uint32 id;
+    std::string config;
+    std::string value;
+};
+
 typedef UNORDERED_MAP<uint32, WorldSession*> SessionMap;
 
 // The World
@@ -611,6 +618,13 @@ class World
         }
 
         void SetInitialWorldSettings();
+
+        /*Module Configs*/
+        void LoadModuleConfig();
+        bool GetModuleBoolConfig(std::string config, bool value);
+        std::string GetModuleStringConfig(std::string config);
+        int32 GetModuleIntConfig(std::string conf, uint32 value);
+
         void LoadConfigSettings(bool reload = false);
 
         void SendWorldText(int32 string_id, ...);
@@ -782,6 +796,7 @@ class World
         void LoadIp2nation();
         void LoadOpcodeProtection();
         void LoadSQLUpdates();
+        void LoadModSQLUpdates();
 
         ProtectedOpcodeProperties const& GetProtectedOpcodeProperties(uint32 opcode);
     protected:
@@ -861,7 +876,9 @@ class World
 
         std::list<std::string> m_Autobroadcasts;
         std::string m_SQLUpdatesPath;
+        std::string m_ModSQLUpdatesPath;
         UNORDERED_MAP<uint32, ProtectedOpcodeProperties> _protectedOpcodesProperties;
+        UNORDERED_MAP<std::string, ModuleConfig> _moduleConfig;
 };
 
 extern uint32 realmID;
