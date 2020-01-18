@@ -23,7 +23,7 @@
 //void AddSC_custom_example();
 //void AddSC_custom_gossip_codebox();
 //void AddSC_test();
-
+void AddModuleScripts();
 //world
 void AddSC_areatrigger_scripts();
 void AddSC_boss_emeriss();
@@ -273,7 +273,7 @@ void AddSC_bug_trio();
 void AddSC_boss_sartura();
 void AddSC_boss_skeram();
 void AddSC_boss_twinemperors();
-void AddSC_mob_anubisath_sentinel();
+void AddSC_npc_anubisath_sentinel();
 void AddSC_instance_temple_of_ahnqiraj();
 void AddSC_wailing_caverns();                //Wailing caverns
 void AddSC_instance_wailing_caverns();
@@ -399,6 +399,7 @@ void AddScripts()
     //    AddSC_custom_example();
     //    AddSC_custom_gossip_codebox();
     //    AddSC_test();
+    AddModuleScripts();
     AddSC_areatrigger_scripts();
     AddSC_boss_emeriss();
     AddSC_boss_taerar();
@@ -646,7 +647,7 @@ void AddScripts()
     AddSC_boss_sartura();
     AddSC_boss_skeram();
     AddSC_boss_twinemperors();
-    AddSC_mob_anubisath_sentinel();
+    AddSC_npc_anubisath_sentinel();
     AddSC_instance_temple_of_ahnqiraj();
     AddSC_wailing_caverns();                //Wailing caverns
     AddSC_instance_wailing_caverns();
@@ -764,4 +765,3 @@ void AddScripts()
     //AddSC_onevents();
     #endif
 }
-
