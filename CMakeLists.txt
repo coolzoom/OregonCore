@@ -12,30 +12,21 @@
 
 project(OregonCore)
 
-# We require CMake >= 2.8
-cmake_minimum_required(VERSION 2.8)
+# We require CMake >= 3.2
+cmake_minimum_required(VERSION 3.2)
 
 # CMake policies (can not be handled elsewhere)
-cmake_policy(VERSION 2.8)
- 
+cmake_policy(SET CMP0005 NEW)
 if(POLICY CMP0043)
-  cmake_policy(SET CMP0043 OLD)
+  cmake_policy(SET CMP0043 NEW) # Disable 'Ignore COMPILE_DEFINITIONS_<Config> properties'
 endif()
 
 if(POLICY CMP0054)
-  cmake_policy(SET CMP0054 NEW)
+  cmake_policy(SET CMP0054 NEW) # Only interpret if() arguments as variables or keywords when unquoted - prevents intepreting if (SOME_STRING_VARIABLE MATCHES "MSVC") as if (SOME_STRING_VARIABLE MATCHES "1")
 endif()
 
-if(CMAKE_VERSION VERSION_EQUAL "3.0.0" OR
-  CMAKE_VERSION VERSION_GREATER "3.0.0")
-  CMAKE_POLICY(SET CMP0026 OLD)
-  CMAKE_POLICY(SET CMP0045 OLD)
-  CMAKE_POLICY(SET CMP0042 OLD)
-endif()
-
-if(CMAKE_VERSION VERSION_EQUAL "3.3.0" OR
-  CMAKE_VERSION VERSION_GREATER "3.3.0")
-  CMAKE_POLICY(SET CMP0059 OLD)
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW) # find_package() uses <PackageName>_ROOT variables
 endif()
 
 # Set RPATH-handing (CMake parameters)
@@ -58,6 +49,11 @@ endif()
 
 include(CheckCXXSourceRuns)
 include(CheckIncludeFiles)
+
+# some utils for cmake
+include(dep/drassil/cmake-utils/utils.cmake)
+
+include(cmake/ac_macros.cmake)
 
 # set default buildoptions and print them
 include(cmake/options.cmake)
@@ -96,5 +92,35 @@ include(cmake/showoptions.cmake)
 # add dependencies
 add_subdirectory(dep)
 
+#
+# Loading dyn modules
+#
+
+# add modules and dependencies
+CU_SUBDIRLIST(sub_DIRS  "${CMAKE_SOURCE_DIR}/modules" FALSE FALSE)
+FOREACH(subdir ${sub_DIRS})
+
+    get_filename_component(MODULENAME ${subdir} NAME)
+
+    if (";${DISABLED_AC_MODULES};" MATCHES ";${MODULENAME};")
+       continue()
+    endif()
+
+    STRING(REGEX REPLACE "^${CMAKE_SOURCE_DIR}/" "" subdir_rel ${subdir})
+    if(EXISTS "${subdir}/CMakeLists.txt")
+        message("Loading module: ${subdir_rel}")
+        add_subdirectory("${subdir_rel}")
+    endif()
+ENDFOREACH()
+CU_RUN_HOOK("AFTER_LOAD_CONF")
+
+CU_RUN_HOOK("AFTER_LOAD_CMAKE_MODULES")
+#
+# Loading application sources
+#
+
+CU_RUN_HOOK("BEFORE_SRC_LOAD")
 # add core sources
 add_subdirectory(src)
+
+CU_RUN_HOOK("AFTER_SRC_LOAD")
