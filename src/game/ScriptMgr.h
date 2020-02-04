@@ -170,6 +170,8 @@ protected:
 
 public:
 
+	virtual void OnLoadCustomDatabaseTable() { }
+
     // Called when the open/closed state of the world changes.
     virtual void OnOpenStateChange(bool open) { }
 
@@ -323,6 +325,12 @@ public:
 
     // Called when a player presses release when he died
     virtual void OnPlayerRepop(Player* /*player*/) { }
+
+    // Called when a player selects an option in a player gossip window
+    virtual void OnGossipSelect(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/) { }
+
+    // Called when a player selects an option in a player gossip window
+    virtual void OnGossipSelectCode(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
 };
 
 
@@ -451,7 +459,14 @@ public:
 
     // Called when the item expires (is destroyed).
     virtual bool OnExpire(Player* player, ItemPrototype const* proto) { return false; }
+
+    // Called when a player selects an option in an item gossip window
+    virtual void OnGossipSelect(Player* /*player*/, Item* /*item*/, uint32 /*sender*/, uint32 /*action*/) { }
+
+    // Called when a player selects an option in an item gossip window
+    virtual void OnGossipSelectCode(Player* /*player*/, Item* /*item*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
 };
+
 
 class CreatureScript : public ScriptObject, public UpdatableScript<Creature>
 {
@@ -702,6 +717,7 @@ public: /* ServerScript */
 
 public: /* WorldScript */
 
+	void OnLoadCustomDatabaseTable();
     void OnOpenStateChange(bool open);
     void OnConfigLoad(bool reload);
     void OnMotdChange(std::string& newMotd);
@@ -740,6 +756,8 @@ public: /* ItemScript */
     bool OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Item* target);
     bool OnQuestAccept(Player* player, Item* item, Quest const* quest);
     bool OnItemUse(Player* player, Item* item, SpellCastTargets const& targets);
+    void OnGossipSelect(Player* player, Item* item, uint32 sender, uint32 action);
+    void OnGossipSelectCode(Player* player, Item* item, uint32 sender, uint32 action, const char* code);
 
 
 public: /* CreatureScript */
@@ -840,6 +858,8 @@ public: /* PlayerScript */
     void OnQuestObjectiveProgress(Player* player, Quest const* quest, uint32 objectiveIndex, uint16 progress);
     void OnQuestStatusChange(Player* player, uint32 questId);
     void OnPlayerRepop(Player* player);
+    void OnGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code);
+    void OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action);
 
 public: /* TransportScript */
 
