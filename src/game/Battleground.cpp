@@ -26,6 +26,9 @@
 #include "Utilities/Util.h"
 #include "World.h"
 #include "GridNotifiersImpl.h"
+#include "Formulas.h"
+#include "LuaEngine.h"
+#include "../Custom/CrossfactionBG/CrossfactionBG.h"
 
 namespace Oregon
 {
@@ -199,6 +202,8 @@ Battleground::Battleground()
 
 Battleground::~Battleground()
 {
+    //sEluna->OnBGDestroy(this, GetTypeID(), GetInstanceID());
+
     // remove objects and creatures
     // (this is done automatically in mapmanager update, when the instance is reset after the reset time)
     int size = m_BgCreatures.size();
@@ -519,7 +524,7 @@ void Battleground::SendPacketToTeam(uint32 TeamID, WorldPacket* packet, Player* 
             continue;
 
         uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+        if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
             plr->GetSession()->SendPacket(packet);
@@ -551,7 +556,7 @@ void Battleground::PlaySoundToTeam(uint32 SoundID, uint32 TeamID)
         }
 
         uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+        if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
         {
@@ -577,7 +582,7 @@ void Battleground::CastSpellOnTeam(uint32 SpellID, uint32 TeamID)
         }
 
         uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+        if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
             plr->CastSpell(plr, SpellID, true);
@@ -620,7 +625,7 @@ void Battleground::RewardHonorToTeam(uint32 Honor, uint32 TeamID)
         }
 
         uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+        if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
             UpdatePlayerScore(plr, SCORE_BONUS_HONOR, Honor);
@@ -647,7 +652,7 @@ void Battleground::RewardReputationToTeam(uint32 faction_id, uint32 Reputation, 
         }
 
         uint32 team = itr->second.Team;
-        if (!team) team = plr->GetTeam();
+        if (!team) team = plr->GetBGTeam();
 
         if (team == TeamID)
         {
@@ -675,6 +680,8 @@ void Battleground::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player*
 
 void Battleground::EndBattleground(uint32 winner)
 {
+    sEluna->OnBGEnd(this, (BattlegroundTypeId)GetTypeID(), GetInstanceID(), (Team)winner);
+
     this->RemoveFromBGFreeSlotQueue();
     uint32 almost_winning_team = HORDE;
     ArenaTeam* winner_arena_team = NULL;
@@ -829,7 +836,7 @@ void Battleground::EndBattleground(uint32 winner)
         plr->GetSession()->SendPacket(&data);
 
         uint32 bgQueueTypeId = sBattlegroundMgr.BGQueueTypeId(GetTypeID(), GetArenaType());
-        sBattlegroundMgr.BuildBattlegroundStatusPacket(&data, this, plr->GetTeam(), plr->GetBattlegroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime());
+        sBattlegroundMgr.BuildBattlegroundStatusPacket(&data, this, plr->GetBGTeam(), plr->GetBattlegroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime());
         plr->GetSession()->SendPacket(&data);
     }
 
@@ -1017,6 +1024,9 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
         if (player->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
             player->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
 
+        if (sWorld.getConfig(CONFIG_CROSSFACTION_BG_ENABLE))
+            sCrossFaction.CFLeaveBattleGround(player);
+
         player->RemoveAurasByType(SPELL_AURA_MOUNTED);
 
         if (!player->IsAlive())                              // resurrect on exit
@@ -1035,7 +1045,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
         {
             player->ClearAfkReports();
 
-            if (!team) team = player->GetTeam();
+            if (!team) team = player->GetBGTeam();
 
             uint32 bgQueueTypeId = sBattlegroundMgr.BGQueueTypeId(GetTypeID(), GetArenaType());
             // if arena, remove the specific arena auras
@@ -1164,6 +1174,8 @@ void Battleground::StartBattleground()
     SetLastResurrectTime(0);
     if (m_IsRated)
         sLog.outArena("Arena match type: %u for Team1Id: %u - Team2Id: %u started.", m_ArenaType, m_ArenaTeamIds[BG_TEAM_ALLIANCE], m_ArenaTeamIds[BG_TEAM_HORDE]);
+
+    sEluna->OnBGStart(this, (BattlegroundTypeId)GetTypeID(), GetInstanceID());
 }
 
 void Battleground::AddPlayer(Player* plr)
@@ -1173,6 +1185,8 @@ void Battleground::AddPlayer(Player* plr)
         plr->ToggleAFK();
 
     // score struct must be created in inherited class
+    if (sWorld.getConfig(CONFIG_CROSSFACTION_BG_ENABLE))
+        sCrossFaction.CFJoinBattleGround(plr);
 
     uint64 guid = plr->GetGUID();
     uint32 team = plr->GetBGTeam();
@@ -1390,6 +1404,12 @@ void Battleground::UpdatePlayerScore(Player* Source, uint32 type, uint32 value)
         sLog.outError("Battleground: Unknown player score type %u", type);
         break;
     }
+}
+
+uint32 Battleground::GetBonusHonorFromKill(uint32 kills) const
+{
+    // variable kills means how many honorable kills you scored (so we need kills * honor_for_one_kill)
+    return Oregon::Honor::hk_honor_at_level(GetMaxLevel(), kills);
 }
 
 void Battleground::AddPlayerToResurrectQueue(uint64 npc_guid, uint64 player_guid)
@@ -1790,7 +1810,7 @@ void Battleground::HandleKillPlayer(Player* victim, Player* killer)
             if (!creditedPlayer || creditedPlayer == killer)
                 continue;
 
-            if (creditedPlayer->GetTeam() == killer->GetTeam() && creditedPlayer->IsAtGroupRewardDistance(victim))
+            if (creditedPlayer->GetBGTeam() == killer->GetBGTeam() && creditedPlayer->IsAtGroupRewardDistance(victim))
                 UpdatePlayerScore(creditedPlayer, SCORE_HONORABLE_KILLS, 1);
         }
     }
@@ -1847,7 +1867,7 @@ void Battleground::PlayerRelogin(uint64 guid)
     sBattlegroundMgr.BuildPvpLogDataPacket(&data, this);
     plr->GetSession()->SendPacket(&data);
 
-    sBattlegroundMgr.BuildBattlegroundStatusPacket(&data, this, plr->GetTeam(), plr->GetBattlegroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime());
+    sBattlegroundMgr.BuildBattlegroundStatusPacket(&data, this, plr->GetBGTeam(), plr->GetBattlegroundQueueIndex(bgQueueTypeId), STATUS_IN_PROGRESS, TIME_TO_AUTOREMOVE, GetStartTime());
     plr->GetSession()->SendPacket(&data);
 }
 
@@ -1897,7 +1917,7 @@ void Battleground::CheckArenaWinConditions()
 
 WorldSafeLocsEntry const* Battleground::GetClosestGraveYard(Player* player)
 {
-    return sObjectMgr.GetClosestGraveYard(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetMapId(), player->GetTeam());
+    return sObjectMgr.GetClosestGraveYard(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetMapId(), player->GetBGTeam());
 }
 
 void Battleground::Announce()
