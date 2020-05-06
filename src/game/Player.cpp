@@ -64,7 +64,6 @@
 #include "ConditionMgr.h"
 #include "ScriptMgr.h"
 #include "PoolMgr.h"
-#include "../Custom/CrossfactionBG/CrossfactionBG.h"
 
 #include <cmath>
 
@@ -948,8 +947,6 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
         }
     }
     // all item positions resolved
-
-    sCrossFaction.SetFakeValues(this);
 
     return true;
 }
@@ -14671,8 +14668,6 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder* holder)
     //Other way is to saves m_team into characters table.
     setFactionForRace(getRace());
 
-    sCrossFaction.SetFakeValues(this);
-
     // load home bind and check in same time class/race pair, it used later for restore broken positions
     if (!_LoadHomeBind(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHOMEBIND)))
         return false;
@@ -16401,7 +16396,7 @@ void Player::SaveToDB()
     uint32 mapid = IsBeingTeleported() ? GetTeleportDest().GetMapId() : GetMapId();
     const MapEntry* me = sMapStore.LookupEntry(mapid);
     // players aren't saved on arena maps
-    if (!me || me->IsBattleArena() || me->IsBattleground())
+    if (!me || me->IsBattleArena())
         return;
 
     int is_save_resting = HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) ? 1 : 0;
@@ -18201,35 +18196,6 @@ void Player::InitDataForForm(bool reapplyMods)
     UpdateAttackPowerAndDamage(true);
 }
 
-void Player::InitDisplayIds()
-{
-    PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
-    if (!info)
-    {
-        sLog.outError("Player %u has incorrect race/class pair. Can't init display ids.", GetGUIDLow());
-        return;
-    }
-
-    // reset scale before reapply auras
-    SetObjectScale(1.0f);
-
-    uint8 gender = getGender();
-    switch (gender)
-    {
-    case GENDER_FEMALE:
-        SetDisplayId(info->displayId_f);
-        SetNativeDisplayId(info->displayId_f);
-        break;
-    case GENDER_MALE:
-        SetDisplayId(info->displayId_m);
-        SetNativeDisplayId(info->displayId_m);
-        break;
-    default:
-        sLog.outError("Invalid gender %u for player", gender);
-    }
-}
-
-
 // Return true is the bought item has a max count to force refresh of window by caller
 bool Player::BuyItemFromVendor(uint64 vendorguid, uint32 item, uint8 count, uint8 bag, uint8 slot)
 {
@@ -19762,6 +19728,9 @@ void Player::SummonIfPossible(bool agree)
     if (Battleground* bg = GetBattleground())
         bg->EventPlayerDroppedFlag(this);
 
+    // Remove Auras is we are getting fly aura upon summon
+    RemoveSpellsCausingAura(SPELL_AURA_FLY);
+
     m_summon_expire = 0;
 
     TeleportTo(m_summon_mapid, m_summon_x, m_summon_y, m_summon_z, GetOrientation());
@@ -20182,7 +20151,7 @@ void Player::UpdateCorpseReclaimDelay()
     if (now < m_deathExpireTime)
     {
         // full and partly periods 1..3
-        uint32 count = (m_deathExpireTime - now) / DEATH_EXPIRE_STEP + 1;
+        uint64 count = (m_deathExpireTime - now) / DEATH_EXPIRE_STEP + 1;
 
         if (count < MAX_DEATH_COUNT)
             m_deathExpireTime = now + (count + 1) * DEATH_EXPIRE_STEP;

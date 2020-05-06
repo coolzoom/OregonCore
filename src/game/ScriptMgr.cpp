@@ -348,6 +348,11 @@ void ScriptMgr::OnUnknownPacketReceive(WorldSocket* socket, WorldPacket& packet)
     FOREACH_SCRIPT(ServerScript)->OnUnknownPacketReceive(socket, packet);
 }
 
+void ScriptMgr::OnLoadCustomDatabaseTable()
+{
+	FOREACH_SCRIPT(WorldScript)->OnLoadCustomDatabaseTable();
+}
+
 void ScriptMgr::OnOpenStateChange(bool open)
 {
     FOREACH_SCRIPT(WorldScript)->OnOpenStateChange(open);
@@ -553,6 +558,24 @@ bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Ite
 
     GET_SCRIPT_RET(ItemScript, target->GetProto()->ScriptId, tmpscript, false);
     return tmpscript->OnDummyEffect(caster, spellId, effIndex, target);
+}
+
+void ScriptMgr::OnGossipSelect(Player* player, Item* item, uint32 sender, uint32 action)
+{
+    ASSERT(player);
+    ASSERT(item);
+
+    GET_SCRIPT(ItemScript, item->GetProto()->ScriptId, tmpscript);
+    tmpscript->OnGossipSelect(player, item, sender, action);
+}
+
+void ScriptMgr::OnGossipSelectCode(Player* player, Item* item, uint32 sender, uint32 action, const char* code)
+{
+    ASSERT(player);
+    ASSERT(item);
+
+    GET_SCRIPT(ItemScript, item->GetProto()->ScriptId, tmpscript);
+    tmpscript->OnGossipSelectCode(player, item, sender, action, code);
 }
 
 bool ScriptMgr::OnQuestAccept(Player* player, Item* item, Quest const* quest)
@@ -791,7 +814,7 @@ std::vector<ChatCommand*> ScriptMgr::GetChatCommands()
     std::vector<ChatCommand*> table;
 
     FOR_SCRIPTS_RET(CommandScript, itr, end, table)
-        table.push_back(itr->second->OnGetCommands());
+        table.push_back(itr->second->GetCommands());
 
     return table;
 }
@@ -1211,6 +1234,16 @@ void ScriptMgr::OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newAre
 void ScriptMgr::OnQuestStatusChange(Player* player, uint32 questId)
 {
     FOREACH_SCRIPT(PlayerScript)->OnQuestStatusChange(player, questId);
+}
+
+void ScriptMgr::OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnGossipSelect(player, menu_id, sender, action);
+}
+
+void ScriptMgr::OnGossipSelectCode(Player* player, uint32 menu_id, uint32 sender, uint32 action, const char* code)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnGossipSelectCode(player, menu_id, sender, action, code);
 }
 
 void ScriptMgr::OnPlayerRepop(Player* player)

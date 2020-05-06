@@ -68,6 +68,7 @@
 #include "M2Stores.h"
 
 #include <ace/Dirent.h>
+#include <ace/OS_NS_sys_stat.h>
 
 INSTANTIATE_SINGLETON_1(World);
 
@@ -1074,9 +1075,6 @@ void World::LoadConfigSettings(bool reload)
     // Battleground
     m_configs[CONFIG_BATTLEGROUND_CAST_DESERTER] = sConfig.GetBoolDefault("Battleground.CastDeserter", true);
     m_configs[CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_ENABLE] = sConfig.GetBoolDefault("Battleground.QueueAnnouncer.Enable", false);
-    m_configs[CONFIG_CROSSFACTION_BG_ENABLE] = sConfig.GetBoolDefault("Battleground.CrossFaction.Enable", false);
-    m_configs[CONFIG_CROSSFACTION_REPLACE_RACIALS] = sConfig.GetBoolDefault("Battleground.CrossFaction.ReplaceRacials", false);
-    m_configs[CONFIG_CROSSFACTION_REPLACE_LANGUAGE] = sConfig.GetBoolDefault("Battleground.Crossfaction.RepalceLanguage", false);
     m_configs[CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_PLAYERONLY] = sConfig.GetBoolDefault("Battleground.QueueAnnouncer.PlayerOnly", false);
     m_configs[CONFIG_BATTLEGROUND_QUEUE_ANNOUNCER_ONSTART] = sConfig.GetBoolDefault("Battleground.QueueAnnouncer.OnStart", false);
     m_configs[CONFIG_BATTLEGROUND_PREMATURE_REWARD] = sConfig.GetBoolDefault("Battleground.PrematureReward", true);
@@ -1103,7 +1101,7 @@ void World::LoadConfigSettings(bool reload)
     #endif
     // module
     m_ModSQLUpdatesPath = sConfig.GetStringDefault("DatabaseUpdater.ModPathToUpdates", "");
-    if (!m_ModSQLUpdatesPath.size() || (*m_ModSQLUpdatesPath.rbegin() != '\\' && *m_ModSQLUpdatesPath.rbegin() != '/'))
+    if ((!m_ModSQLUpdatesPath.size() || (*m_ModSQLUpdatesPath.rbegin() != '\\' && *m_ModSQLUpdatesPath.rbegin() != '/')) && !m_ModSQLUpdatesPath.empty())
 #if PLATFORM == PLATFORM_WINDOWS
         m_ModSQLUpdatesPath += '\\';
 #else
@@ -1209,6 +1207,9 @@ void World::LoadSQLUpdates()
 
 void World::LoadModSQLUpdates()
 {
+    if (!m_configs[CONFIG_SQLUPDATER_ENABLED])
+        return;
+
     const struct
     {
         // db pointer
@@ -1232,13 +1233,18 @@ void World::LoadModSQLUpdates()
     // already applied before (from db)
     std::set<std::string> alreadyAppliedFiles;
 
+    if (m_ModSQLUpdatesPath.empty()) {
+        outstring_log(">> Skipping modules SQL updates.");
+        return;
+    }
+
     // get folders in modules/
     if (ACE_DIR* dira = ACE_OS::opendir(m_ModSQLUpdatesPath.c_str()))
     {
         while (ACE_DIRENT* directory = ACE_OS::readdir(dira))
         {
             // Skip the ".." and "." files.
-            if (ACE::isdotdir(directory->d_name) == true)
+            if (directory->d_name[0] == '.' || ACE::isdotdir(directory->d_name))
                 continue;
 
             // refresh path
@@ -1258,7 +1264,9 @@ void World::LoadModSQLUpdates()
             {
                 sLog.outFatal("directory error %s: %s", path.c_str(), strerror(errno));
                 continue;
-            }
+			}
+
+
             switch (stat_buf.st_mode & S_IFMT)
             {
             case S_IFDIR://is directory?
@@ -1304,7 +1312,7 @@ void World::LoadModSQLUpdates()
 
                     // Change current directory to modules/mod_xxx/sql(path)
                     if (-1 == ACE_OS::chdir(pathsql.c_str()))
-                        sLog.outFatal("Can't change directory to %s: %s", pathsql.c_str(), strerror(errno));
+                        continue;  
 
                     // get files in modules/mod_xxx/sql/(path)/ directory
                     if (ACE_DIR* dir = ACE_OS::opendir(pathsql.c_str()))
@@ -1765,6 +1773,9 @@ void World::SetInitialWorldSettings()
     sConsole.SetLoadingLabel("Initializing Scripts...");
     sScriptMgr.ScriptsInit();
 
+	sConsole.SetLoadingLabel("Loading ScriptLoader Module WorldScripts...");
+	sScriptMgr.OnLoadCustomDatabaseTable();
+
     // Initialize game time and timers
     sLog.outDebug("DEBUG:: Initialize game time and timers");
     m_gameTime = time(NULL);
@@ -2000,7 +2011,6 @@ ProtectedOpcodeProperties const& World::GetProtectedOpcodeProperties(uint32 opco
     return _protectedOpcodesProperties[opcode];
 }
 
-//sModuleMgr.GetBool(std::string conf, bool, default)
 bool World::GetModuleBoolConfig(std::string conf, bool value)
 {
     auto it = _moduleConfig.find(conf.c_str());
@@ -2019,6 +2029,7 @@ bool World::GetModuleBoolConfig(std::string conf, bool value)
 std::string World::GetModuleStringConfig(std::string conf)
 {
     auto it = _moduleConfig.find(conf.c_str());
+
     ModuleConfig Mod = it->second;
 
     return Mod.value.c_str();
