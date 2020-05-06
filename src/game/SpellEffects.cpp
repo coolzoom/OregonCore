@@ -53,7 +53,6 @@
 #include "GameObjectAI.h"
 #include "InstanceData.h"
 #include "MoveSplineInit.h"
-#include "LuaEngine.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS] =
 {
@@ -3672,19 +3671,8 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
 
             if (damage)                                            // if not spell info, DB values used
             {
-                summon = m_caster->GetMap()->SummonCreature(entry, pos, properties, duration, m_originalCaster, m_spellInfo->Id);
-                if (!summon || !summon->IsTotem())
-                    return;
-
-                if (damage)                                            // if not spell info, DB values used
-                {
-                    summon->SetMaxHealth(damage);
-                    summon->SetHealth(damage);
-                }
-
-                if (Unit* summoner = m_caster->ToUnit())
-                    sEluna->OnSummoned(summon, summoner);
-                break;
+                summon->SetMaxHealth(damage);
+                summon->SetHealth(damage);
             }
             break;
         }
@@ -3732,33 +3720,14 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
 
             switch (m_spellInfo->Id)
             {
-                TempSummonType summonType = (duration == 0) ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_DESPAWN;
-                summon = m_originalCaster->SummonCreature(entry, pos, summonType, duration);
-                if (!summon)
-                    return;
-
-                if (properties->Category == SUMMON_CATEGORY_ALLY)
-                {
-                    summon->SetUInt64Value(UNIT_FIELD_SUMMONEDBY, m_originalCaster->GetGUID());
-                    summon->SetFaction(m_originalCaster->GetFaction());
-                    summon->SetLevel(m_originalCaster->getLevel());
-                    summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
-                }
-
-                switch (m_spellInfo->Id)
-                {
-                    case 45392:
-                        if (summon->IsAIEnabled)
-                            summon->AI()->AttackStart(m_caster);
-                        break;
-                    default:
-                        if (summon->IsAIEnabled && m_originalCaster->IsInCombat())
-                            summon->AI()->EnterCombat(nullptr);
-                        break;
-                }
-
-                if (Unit* summoner = m_originalCaster->ToUnit())
-                    sEluna->OnSummoned(summon, summoner);
+            case 45392:
+                if (summon->IsAIEnabled)
+                    summon->AI()->AttackStart(m_caster);
+                break;
+            default:
+                if (summon->IsAIEnabled && m_originalCaster->IsInCombat())
+                    summon->AI()->EnterCombat(nullptr);
+                break;
             }
         }
         return;
@@ -6079,9 +6048,6 @@ void Spell::EffectDuel(SpellEffIndex effIndex)
 
     caster->SetUInt64Value(PLAYER_DUEL_ARBITER, pGameObj->GetGUID());
     target->SetUInt64Value(PLAYER_DUEL_ARBITER, pGameObj->GetGUID());
-
-    // used by eluna
-    sEluna->OnDuelRequest(target, caster);
 }
 
 void Spell::EffectStuck(SpellEffIndex /*effIndex*/)
@@ -7449,9 +7415,6 @@ void Spell::SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* 
 
         summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
         summon->AI()->EnterEvadeMode();
-
-        if (Unit* summoner = m_caster->ToUnit())
-            sEluna->OnSummoned(summon, summoner);
     }
 }
 

@@ -220,13 +220,13 @@ void BattlegroundAB::HandleAreaTrigger(Player* Source, uint32 Trigger)
     switch (Trigger)
     {
     case 3948:                                          // Arathi Basin Alliance Exit.
-        if (Source->GetBGTeam() != ALLIANCE)
+        if (Source->GetTeam() != ALLIANCE)
             Source->GetSession()->SendAreaTriggerMessage("Only The Alliance can use that portal");
         else
             Source->LeaveBattleground();
         break;
     case 3949:                                          // Arathi Basin Horde Exit.
-        if (Source->GetBGTeam() != HORDE)
+        if (Source->GetTeam() != HORDE)
             Source->GetSession()->SendAreaTriggerMessage("Only The Horde can use that portal");
         else
             Source->LeaveBattleground();
@@ -427,7 +427,7 @@ void BattlegroundAB::EventPlayerClickedOnFlag(Player* source, GameObject* /*targ
         return;
     }
 
-    uint8 teamIndex = GetTeamIndexByTeamId(source->GetBGTeam());
+    uint8 teamIndex = GetTeamIndexByTeamId(source->GetTeam());
 
     // Check if player really could use this banner, not cheated
     if (!(m_Nodes[node] == 0 || teamIndex == m_Nodes[node] % 2))
@@ -595,7 +595,7 @@ void BattlegroundAB::ResetBGSubclass()
 
 WorldSafeLocsEntry const* BattlegroundAB::GetClosestGraveYard(Player* player)
 {
-    uint8 teamIndex = GetTeamIndexByTeamId(player->GetBGTeam());
+    uint8 teamIndex = GetTeamIndexByTeamId(player->GetTeam());
 
     // Is there any occupied node for this team?
     std::vector<uint8> nodes;

@@ -54,7 +54,6 @@
 #include "DisableMgr.h"
 #include "ConditionMgr.h"
 #include "ScriptMgr.h"
-#include "LuaEngine.h"
 
 bool ChatHandler::HandleAHBotOptionsCommand(const char* args)
 {
@@ -1218,13 +1217,6 @@ bool ChatHandler::HandleReloadConditions(const char* args)
     sLog.outString("Re-Loading Conditions...");
     sConditionMgr.LoadConditions(true);
     SendGlobalGMSysMessage("Conditions reloaded.");
-    return true;
-}
-
-bool ChatHandler::HandleElunaReloadCommand(const char*)
-{
-    sLog.outString("Loading Eluna scripts");
-    Eluna::ReloadEluna();
     return true;
 }
 

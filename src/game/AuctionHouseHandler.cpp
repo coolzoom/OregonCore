@@ -27,7 +27,6 @@
 #include "Opcodes.h"
 #include "UpdateMask.h"
 #include "Utilities/Util.h"
-#include "LuaEngine.h"
 
 
 // please DO NOT use iterator++, because it is slower than ++iterator!!!
@@ -285,8 +284,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
     CharacterDatabase.CommitTransaction();
 
     SendAuctionCommandResult(AH->Id, AUCTION_SELL_ITEM, AUCTION_OK);
-
-    sEluna->OnAdd(auctionHouse, AH);
 }
 
 // this function is called when client bids or buys out auction
@@ -479,7 +476,6 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
     auction->DeleteFromDB();
     uint32 item_template = auction->item_template;
     sAuctionMgr->RemoveAItem(auction->item_guidlow);
-    sEluna->OnRemove(auctionHouse, auction);
     auctionHouse->RemoveAuction(auction, item_template);
     CharacterDatabase.CommitTransaction();
 }
