@@ -25,7 +25,6 @@
 
 class Item;
 
-#define GUILD_RANK_NONE         0xFF
 #define GUILD_RANKS_MIN_COUNT   5
 #define GUILD_RANKS_MAX_COUNT   10
 
@@ -339,8 +338,6 @@ class Guild
         {
             return GetNrRanks() - 1;
         }
-
-        void HandleInviteMember(WorldSession* session, std::string const& name);
 
         void SetMOTD(std::string motd);
         void SetGINFO(std::string ginfo);

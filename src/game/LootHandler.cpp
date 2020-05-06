@@ -28,7 +28,6 @@
 #include "Group.h"
 #include "World.h"
 #include "Utilities/Util.h"
-#include "LuaEngine.h"
 
 void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
 {
@@ -148,8 +147,6 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
         --loot->unlootedCount;
 
         player->SendNewItem(newitem, uint32(item->count), false, false, true);
-
-        sEluna->OnLootItem(player, newitem, item->count, lguid);
     }
     else
         player->SendEquipError(msg, NULL, NULL);
@@ -247,17 +244,10 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
                 data << uint32(money_per_player);
 
                 (*i)->GetSession()->SendPacket(&data);
-
-                sEluna->OnLootMoney((*i), money_per_player);
             }
-
         }
         else
-        {
             player->ModifyMoney(pLoot->gold);
-
-            sEluna->OnLootMoney(player, pLoot->gold);
-        }
 
         pLoot->gold = 0;
     }
@@ -547,8 +537,6 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
     // now move item from loot to target inventory
     Item* newitem = target->StoreNewItem(dest, item.itemid, true, item.randomPropertyId);
     target->SendNewItem(newitem, uint32(item.count), false, false, true);
-
-    sEluna->OnLootItem(target, newitem, item.count, lootguid);
 
     // mark as looted
     item.count = 0;

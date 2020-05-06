@@ -41,7 +41,6 @@
 #include "MapManager.h"
 #include "SystemConfig.h"
 #include "ScriptMgr.h"
-#include "LuaEngine.h"
 
 class LoginQueryHolder : public SqlQueryHolder
 {
@@ -375,8 +374,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
     if ((have_same_race && skipCinematics == 1) || skipCinematics == 2)
         pNewChar->setCinematic(1);                          // not show intro
 
-    pNewChar->SetAtLoginFlag(AT_LOGIN_FIRST);               // First login
-
     // Player created, save it now
     pNewChar->SaveToDB();
     charcount += 1;
@@ -390,10 +387,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
     std::string IP_str = GetRemoteAddress();
     sLog.outBasic("Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), pNewChar->GetGUIDLow());
     sLog.outChar("Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), pNewChar->GetGUIDLow());
-
-    // used by eluna
-    sEluna->OnCreate(pNewChar);
-
     delete pNewChar;                                        // created only to call SaveToDB()
 
 }
@@ -443,9 +436,6 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recv_data)
     std::string IP_str = GetRemoteAddress();
     sLog.outDetail("Account: %d (IP: %s) Delete Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), GUID_LOPART(guid));
     sLog.outChar("Account: %d (IP: %s) Delete Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), GUID_LOPART(guid));
-
-    // used by eluna
-    sEluna->OnDelete(GUID_LOPART(guid));
 
     if (sLog.IsLogTypeEnabled(LOG_TYPE_CHAR))                                // optimize GetPlayerDump call
     {
@@ -710,13 +700,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         SendNotification(LANG_RESET_TALENTS);
     }
 
-    // used by eluna
-    if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
-        sEluna->OnFirstLogin(pCurrChar);
-
-    if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
-        pCurrChar->RemoveAtLoginFlag(AT_LOGIN_FIRST);
-
     // announce group about member online (must be after add to player list to receive announce to self)
     if (Group* group = pCurrChar->GetGroup())
         group->SendUpdate();
@@ -793,9 +776,6 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
     //Hook for OnLogin Event
     sScriptMgr.OnPlayerLogin(pCurrChar, firstlogin);
-
-    // used by eluna
-    sEluna->OnLogin(pCurrChar);
 
     delete holder;
 }

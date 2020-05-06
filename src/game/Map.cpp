@@ -30,7 +30,6 @@
 #include "ObjectMgr.h"
 #include "DynamicTree.h"
 #include "MoveMap.h"
-#include "LuaEngine.h"
 
 #define DEFAULT_GRID_EXPIRY     300
 #define MAX_GRID_LOAD_TIME      50
@@ -42,8 +41,6 @@ Map::~Map()
 {
     if (!Instanceable())
         sScriptMgr.OnDestroyMap(this);
-
-    sEluna->OnDestroy(this);
 
     UnloadAll();
 
@@ -59,9 +56,6 @@ Map::~Map()
 
     if (!m_scriptSchedule.empty())
         sWorld.DecreaseScheduledScriptCount(m_scriptSchedule.size());
-
-    if (Instanceable())
-        sEluna->FreeInstanceId(GetInstanceId());
 
     MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(GetId(), i_InstanceId);
 }
@@ -241,8 +235,6 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode, Map* _par
 
     if (!Instanceable())
         sScriptMgr.OnCreateMap(this);
-
-    sEluna->OnCreate(this);
 }
 
 void Map::InitVisibilityDistance()
@@ -439,10 +431,6 @@ bool Map::AddPlayerToMap(Player* player)
     player->m_clientGUIDs.clear();
     player->UpdateObjectVisibility(false);
     sScriptMgr.OnPlayerEnter(this, player);
-
-    sEluna->OnMapChanged(player);
-    sEluna->OnPlayerEnter(this, player);
-
     return true;
 }
 
@@ -604,8 +592,6 @@ void Map::Update(const uint32& t_diff)
     if (!m_mapRefManager.isEmpty() || !m_activeNonPlayers.empty())
         ProcessRelocationNotifies(t_diff);
 
-    sEluna->OnUpdate(this, t_diff);
-
     sScriptMgr.OnMapUpdate(this, t_diff);
 }
 
@@ -726,9 +712,6 @@ void Map::RemovePlayerFromMap(Player* player, bool remove)
 template<class T>
 void Map::RemoveFromMap(T *obj, bool remove)
 {
-    if (obj->ToPlayer());
-        sEluna->OnPlayerLeave(this, obj->ToPlayer());
-
     obj->RemoveFromWorld();
     if (obj->isActiveObject())
         RemoveFromActive(obj);
@@ -2086,11 +2069,6 @@ void Map::AddObjectToRemoveList(WorldObject* obj)
 {
     ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
 
-    if (Creature* creature = obj->ToCreature())
-        sEluna->OnRemove(creature);
-    else if (GameObject* gameobject = obj->ToGameObject())
-        sEluna->OnRemove(gameobject);
-
     obj->CleanupsBeforeDelete();                            // remove or simplify at least cross referenced links
 
     i_objectsToRemove.insert(obj);
@@ -2474,20 +2452,15 @@ void InstanceMap::CreateInstanceData(bool load)
     if (i_data != NULL)
         return;
 
-    i_data = sEluna->GetInstanceData(this);
+    InstanceTemplate const* mInstance = sObjectMgr.GetInstanceTemplate(GetId());
+    if (mInstance)
+    {
+        i_script_id = mInstance->script_id;
+        i_data = sScriptMgr.CreateInstanceData(this);
+    }
 
     if (!i_data)
-    {
-        InstanceTemplate const* mInstance = sObjectMgr.GetInstanceTemplate(GetId());
-        if (mInstance)
-        {
-            i_script_id = mInstance->script_id;
-            i_data = sScriptMgr.CreateInstanceData(this);
-        }
-
-        if (!i_data)
-            return;
-    }
+        return;
 
     i_data->Initialize();
 

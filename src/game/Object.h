@@ -27,6 +27,7 @@
 #include "ObjectGuid.h"
 #include "GridDefines.h"
 #include "Map.h"
+#include "Utilities/DataMap.h"
 
 #include <set>
 #include <string>
@@ -118,7 +119,6 @@ class TempSummon;
 class CreatureAI;
 class ZoneScript;
 class Unit;
-class ElunaEventProcessor;
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
 
@@ -265,7 +265,6 @@ class Object
 
         void SetInt32Value( uint16 index,        int32  value);
         void SetUInt32Value(uint16 index,       uint32  value);
-        void UpdateUInt32Value(uint16 index, uint32 value);
         void SetUInt64Value(uint16 index, const uint64& value);
         void SetFloatValue( uint16 index,       float   value);
         void SetByteValue(  uint16 index, uint8 offset, uint8 value);
@@ -402,6 +401,8 @@ class Object
 
         DynamicObject* ToDynObject() { if (GetTypeId() == TYPEID_DYNAMICOBJECT) return reinterpret_cast<DynamicObject*>(this); else return NULL; }
         DynamicObject const* ToDynObject() const { if (GetTypeId() == TYPEID_DYNAMICOBJECT) return reinterpret_cast<DynamicObject const*>(this); else return NULL; }
+
+        DataMap CustomData;
 
     protected:
 
@@ -632,7 +633,7 @@ class WorldObject : public Object, public WorldLocation
     public:
         ~WorldObject() override;
 
-        virtual void Update(uint32 /*time_diff*/);
+        virtual void Update (uint32 /*time_diff*/) { }
 
         void _Create(uint32 guidlow, HighGuid guidhigh);
         virtual void RemoveFromWorld() override;
@@ -918,7 +919,6 @@ class WorldObject : public Object, public WorldLocation
 
         MovementInfo m_movementInfo;
 
-        ElunaEventProcessor* elunaEvents;
     protected:
         explicit WorldObject(bool isWorldObject); //note: here it means if it is in grid object list or world object list
         std::string m_name;
