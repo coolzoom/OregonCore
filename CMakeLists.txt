@@ -67,6 +67,8 @@ endif()
 # platform detection
 include(CheckPlatform)
 
+include(GroupSources)
+
 # basic package searching and setup
 find_package(PCHSupport)
 find_package(ACE REQUIRED)

@@ -26,6 +26,7 @@
 #include "Utilities/Util.h"
 #include "World.h"
 #include "GridNotifiersImpl.h"
+#include "ScriptMgr.h"
 
 namespace Oregon
 {
@@ -1017,6 +1018,8 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
         if (player->HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
             player->RemoveSpellsCausingAura(SPELL_AURA_MOD_SHAPESHIFT);
 
+        sScriptMgr.OnPlayerLeaveBG(player, this);
+
         player->RemoveAurasByType(SPELL_AURA_MOUNTED);
 
         if (!player->IsAlive())                              // resurrect on exit
@@ -1173,6 +1176,7 @@ void Battleground::AddPlayer(Player* plr)
         plr->ToggleAFK();
 
     // score struct must be created in inherited class
+        sCrossFaction.CFJoinBattleGround(plr);
 
     uint64 guid = plr->GetGUID();
     uint32 team = plr->GetBGTeam();

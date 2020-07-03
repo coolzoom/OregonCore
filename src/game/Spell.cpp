@@ -1167,7 +1167,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, const uint32 effectMask)
                 }
             }
         }
-        if (m_caster->IsValidAttackTarget(unit))
+        if (m_caster->_IsValidAttackTarget(unit, m_spellInfo))
         {
             unit->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_HITBYSPELL);
             if (m_customAttr & SPELL_ATTR_CU_AURA_CC)
@@ -3805,6 +3805,14 @@ SpellCastResult Spell::CheckCast(bool strict)
         if (Battleground* bg = m_caster->ToPlayer()->GetBattleground())
             if (bg->GetStatus() == STATUS_WAIT_LEAVE)
                 return SPELL_FAILED_DONT_REPORT;
+
+    // Dont allow Stealth or Invisibility to be casted while the target is Flared
+    if (m_spellInfo->Id == 1784 || m_spellInfo->Id == 66
+        || (m_spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && m_spellInfo->SpellIconID == 250)
+        || (m_spellInfo->SpellFamilyName == SPELLFAMILY_DRUID && m_spellInfo->SpellIconID == 103))
+        if (Player* playerCaster = m_caster->ToPlayer())
+            if (playerCaster->HasAura(1543))
+                return SPELL_FAILED_CASTER_AURASTATE;
 
     if (m_caster->GetTypeId() == TYPEID_PLAYER && VMAP::VMapFactory::createOrGetVMapManager()->isLineOfSightCalcEnabled())
     {

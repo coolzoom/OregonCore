@@ -431,6 +431,27 @@ void ScriptMgr::OnGetGroupRate(float& rate, uint32 count, bool isRaid)
     FOREACH_SCRIPT(FormulaScript)->OnGetGroupRate(rate, count, isRaid);
 }
 
+void ScriptMgr::OnPlayerMove(Player* player, MovementInfo movementInfo, uint32 opcode)
+{
+    FOREACH_SCRIPT(MovementHandlerScript)->OnPlayerMove(player, movementInfo, opcode);
+}
+
+// Battleground 
+void ScriptMgr::OnPlayerJoinBG(Player* player, Battleground* bg)
+{
+    FOREACH_SCRIPT(BGScript)->OnPlayerJoinBG(player, bg);
+}
+
+void ScriptMgr::OnPlayerLeaveBG(Player* player, Battleground* bg)
+{
+    FOREACH_SCRIPT(BGScript)->OnPlayerLeaveBG(player, bg);
+}
+
+void ScriptMgr::OnBGAssignTeam(Player* player, Battleground* bg, uint32& team)
+{
+    FOREACH_SCRIPT(BGScript)->OnBGAssignTeam(player, bg, team);
+}
+
 #define SCR_MAP_BGN(M,V,I,E,C,T) \
     if (V->GetEntry()->T()) \
     { \
@@ -809,12 +830,20 @@ bool ScriptMgr::OnTrigger(Player* player, AreaTriggerEntry const* trigger)
 }
 
 
-std::vector<ChatCommand*> ScriptMgr::GetChatCommands()
+std::vector<ChatCommand> ScriptMgr::GetChatCommands()
 {
-    std::vector<ChatCommand*> table;
+    std::vector<ChatCommand> table;
 
     FOR_SCRIPTS_RET(CommandScript, itr, end, table)
-        table.push_back(itr->second->GetCommands());
+    {
+        std::vector<ChatCommand> cmds = itr->second->GetCommands();
+        table.insert(table.end(), cmds.begin(), cmds.end());
+    }
+
+    std::sort(table.begin(), table.end(), [](const ChatCommand& a, const ChatCommand&b)
+    {
+        return strcmp(a.Name, b.Name) < 0;
+    });
 
     return table;
 }
@@ -1041,6 +1070,20 @@ PlayerScript::PlayerScript(const char* name)
 	ScriptMgr::ScriptRegistry<PlayerScript>::AddScript(this);
 }
 
+// Movement
+MovementHandlerScript::MovementHandlerScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptMgr::ScriptRegistry<MovementHandlerScript>::AddScript(this);
+}
+
+
+BGScript::BGScript(const char* name)
+    : ScriptObject(name)
+{
+    ScriptMgr::ScriptRegistry<BGScript>::AddScript(this);
+}
+
 // Group
 void ScriptMgr::OnGroupAddMember(Group* group, Player* guid)
 {
@@ -1086,6 +1129,12 @@ void ScriptMgr::OnGroupDisband(Group* group, Player* leader)
 
 
 // Player
+
+void ScriptMgr::OnPlayerLoadFromDB(Player* player)
+{
+    FOREACH_SCRIPT(PlayerScript)->OnPlayerLoadFromDB(player);
+}
+
 void ScriptMgr::OnPVPKill(Player* killer, Player* killed)
 {
     FOREACH_SCRIPT(PlayerScript)->OnPVPKill(killer, killed);
@@ -1352,6 +1401,8 @@ template class ScriptMgr::ScriptRegistry<AuctionHouseScript>;
 template class ScriptMgr::ScriptRegistry<ConditionScript>;
 template class ScriptMgr::ScriptRegistry<DynamicObjectScript>;
 template class ScriptMgr::ScriptRegistry<TransportScript>;
+template class ScriptMgr::ScriptRegistry<MovementHandlerScript>;
+template class ScriptMgr::ScriptRegistry<BGScript>;
 
 // Undefine utility macros.
 #undef GET_SCRIPT_RET

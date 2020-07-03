@@ -33,6 +33,7 @@
 #include "Language.h"
 #include "World.h"
 #include "DisableMgr.h"
+#include "ScriptMgr.h"
 
 void WorldSession::HandleBattlegroundHelloOpcode(WorldPacket& recv_data)
 {
@@ -433,6 +434,7 @@ void WorldSession::HandleBattlegroundPlayerPortOpcode(WorldPacket& recv_data)
             && pitr->second.GroupInfo)
         {
             team = pitr->second.GroupInfo->Team;
+            sScriptMgr.OnBGAssignTeam(_player, bg, team);
             arenatype = pitr->second.GroupInfo->ArenaType;
             israted = pitr->second.GroupInfo->IsRated;
             rating = pitr->second.GroupInfo->ArenaTeamRating;
@@ -472,7 +474,7 @@ void WorldSession::HandleBattlegroundPlayerPortOpcode(WorldPacket& recv_data)
                 _player->CleanupAfterTaxiFlight();
             }
             queueSlot = _player->GetBattlegroundQueueIndex(bgQueueTypeId);
-            sBattlegroundMgr.BuildBattlegroundStatusPacket(&data, bg, _player->GetTeam(), queueSlot, STATUS_IN_PROGRESS, 0, bg->GetStartTime());
+            sBattlegroundMgr.BuildBattlegroundStatusPacket(&data, bg, _player->GetTeam() != team ? team : _player->GetTeam() , queueSlot, STATUS_IN_PROGRESS, 0, bg->GetStartTime());
             _player->GetSession()->SendPacket(&data);
             // remove battleground queue status from BGmgr
             sBattlegroundMgr.m_BattlegroundQueues[bgQueueTypeId].RemovePlayer(_player->GetGUID(), false);
