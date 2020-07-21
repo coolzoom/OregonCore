@@ -633,6 +633,51 @@ bool AuthSocket::_HandleLogonProof()
     sha.UpdateData(t1, 16);
     sha.Finalize();
 
+    // Check auth token
+    if ((lp.securityFlags & 0x04) && !_tokenKey.empty()) //TOTP
+    {
+        uint8 size;
+        recv((char*)&size, 1);
+        char* token = new char[size + 1];
+        token[size] = '\0';
+        recv(token, size);
+        unsigned int validToken = TOTP::GenerateToken(_tokenKey.c_str());
+        unsigned int incomingToken = atoi(token);
+        delete[] token;
+        if (validToken != incomingToken)
+        {
+            char data[4] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT, 3, 0 };
+            send(data, sizeof(data));
+            return false;
+        }
+    }
+    else if ((lp.securityFlags & 0x01) && !_tokenKey.empty()) //pin
+    {
+        PINData pinData;
+
+        if (lp.securityFlags)
+        {
+            if (!recv((char*)&pinData, sizeof(pinData)))
+                return false;
+        }
+
+        bool pinResult = true;
+        uint8* salt = pinData.salt;
+        uint8* hash = pinData.hash;
+        pinResult = VerifyPinData(std::stoi(_tokenKey), pinData);
+        sLog.outBasic("[AuthChallenge] Account '%s' using IP '%s' PIN result: %u", _login.c_str(), getRemoteAddress().c_str(), pinResult);
+        if (!pinResult)
+        {
+            char data[4] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT, 3, 0 };
+            send(data, sizeof(data));
+            return false;
+        }
+    }
+    else if ((lp.securityFlags & 0x02) && !_tokenKey.empty()) //matrix
+    {
+        //TODO
+    }
+
     for (int i = 0; i < 20; ++i)
         vK[i * 2] = sha.GetDigest()[i];
     for (int i = 0; i < 16; ++i)
@@ -685,51 +730,6 @@ bool AuthSocket::_HandleLogonProof()
         sha.Initialize();
         sha.UpdateBigNumbers(&A, &M, &K, NULL);
         sha.Finalize();
-
-        // Check auth token
-        if ((lp.securityFlags & 0x04) && !_tokenKey.empty()) //TOTP
-        {
-            uint8 size;
-            recv((char*)&size, 1);
-            char* token = new char[size + 1];
-            token[size] = '\0';
-            recv(token, size);
-            unsigned int validToken = TOTP::GenerateToken(_tokenKey.c_str());
-            unsigned int incomingToken = atoi(token);
-            delete[] token;
-            if (validToken != incomingToken)
-            {
-                char data[4] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT, 3, 0 };
-                send(data, sizeof(data));
-                return false;
-            }
-        }
-        else if ((lp.securityFlags & 0x01) && !_tokenKey.empty()) //pin
-        {
-            PINData pinData;
-
-            if (lp.securityFlags)
-            {
-                if (!recv((char*)&pinData, sizeof(pinData)))
-                    return false;
-            }
-
-            bool pinResult = true;
-            uint8* salt = pinData.salt;
-            uint8* hash = pinData.hash;
-            pinResult = VerifyPinData(std::stoi(_tokenKey), pinData);
-            sLog.outBasic("[AuthChallenge] Account '%s' using IP '%s' PIN result: %u", _login.c_str(), getRemoteAddress().c_str(), pinResult);
-            if (!pinResult)
-            {
-                char data[4] = { CMD_AUTH_LOGON_PROOF, WOW_FAIL_UNKNOWN_ACCOUNT, 3, 0 };
-                send(data, sizeof(data));
-                return false;
-            }
-        }
-        else if ((lp.securityFlags & 0x02) && !_tokenKey.empty()) //matrix
-        {
-            //TODO
-        }
 
         sLog.outBasic("[AuthChallenge] account '%s' successfully authenticated", _login.c_str());
         SendProof(sha);
