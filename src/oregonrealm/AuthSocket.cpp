@@ -1143,18 +1143,7 @@ bool AuthSocket::_HandleXferAccept()
 bool AuthSocket::VerifyPinData(uint32 pin, const PINData& clientData)
 {
 	// remap the grid to match the client's layout
-	//std::vector<uint8> grid { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	std::vector<uint8> grid;// { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	grid.push_back(0);
-	grid.push_back(1);
-	grid.push_back(2);
-	grid.push_back(3);
-	grid.push_back(4);
-	grid.push_back(5);
-	grid.push_back(6);
-	grid.push_back(7);
-	grid.push_back(8);
-	grid.push_back(9);
+	std::vector<uint8> grid = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
 	std::vector<uint8> remappedGrid(grid.size());
 
