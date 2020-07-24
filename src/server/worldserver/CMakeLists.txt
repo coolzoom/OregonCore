@@ -33,7 +33,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/sockets/include
   ${CMAKE_SOURCE_DIR}/dep/SFMT
   ${CMAKE_SOURCE_DIR}/dep/mersennetwister
-  ${CMAKE_SOURCE_DIR}//src/common/collision
+  ${CMAKE_SOURCE_DIR}//src/common/Collision
   ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
   ${CMAKE_SOURCE_DIR}/src/shared
   ${CMAKE_SOURCE_DIR}/src/shared/Database
