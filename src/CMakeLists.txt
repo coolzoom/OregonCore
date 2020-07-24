@@ -26,8 +26,7 @@ if( SERVERS )
   add_subdirectory(framework)
   add_subdirectory(shared)
 
-  add_subdirectory(collision)
-
+  add_subdirectory(common)
   add_subdirectory(server)
 else()
   if( TOOLS )

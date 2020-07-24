@@ -12,7 +12,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
   ${CMAKE_SOURCE_DIR}/src/shared
   ${CMAKE_SOURCE_DIR}/src/shared/Debugging
-  ${CMAKE_SOURCE_DIR}/src/collision
+  ${CMAKE_SOURCE_DIR}//src/common/collision
   ${CMAKE_SOURCE_DIR}/src/framework
   ${ACE_INCLUDE_DIR}
   ${ZLIB_INCLUDE_DIR}
