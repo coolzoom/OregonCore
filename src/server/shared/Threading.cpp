@@ -22,7 +22,7 @@
 #include <vector>
 
 #if PLATFORM == PLATFORM_UNIX
-#include "Debugging/UnixDebugger.h"
+#include "UnixDebugger.h"
 #endif
 
 using namespace ACE_Based;
@@ -65,7 +65,7 @@ ThreadPriority::ThreadPriority()
         //since we have only 7(seven) values in enum Priority
         //and 3 we know already (Idle, Normal, Realtime) so
         //we need to split each list [Idle...Normal] and [Normal...Realtime]
-        //into ¹ piesces
+        //into ?piesces
         const size_t _divider = 4;
         size_t _div = (norm_pos - min_pos) / _divider;
         if (_div == 0)

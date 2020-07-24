@@ -11,6 +11,9 @@
 set(sources_Debugging "")
 
 if( SERVERS )
+  include_directories(
+    ${CMAKE_SOURCE_DIR}/src/common/Debugging
+  )
   if (WIN32)
       set(sources_Debugging
         ${CMAKE_SOURCE_DIR}/src/common/Debugging/WheatyExceptionReport.cpp
@@ -18,7 +21,10 @@ if( SERVERS )
       )
   else(WIN32)
     if (UNIX)
-        set(sources_Debugging ${CMAKE_SOURCE_DIR}/src/common/Debugging/UnixDebugger.cpp)
+	set(sources_Debugging
+        ${CMAKE_SOURCE_DIR}/src/common/Debugging/UnixDebugger.cpp
+        ${CMAKE_SOURCE_DIR}/src/common/Debugging/UnixDebugger.h
+      )
     endif (UNIX)
   endif(WIN32)
 
