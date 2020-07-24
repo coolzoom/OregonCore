@@ -38,8 +38,8 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/common/Collision
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast
-  ${CMAKE_SOURCE_DIR}/src/shared
-  ${CMAKE_SOURCE_DIR}/src/shared/Database
+  ${CMAKE_SOURCE_DIR}/src/server/shared
+  ${CMAKE_SOURCE_DIR}/src/server/shared/Database
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/src/server/scripts/PrecompiledHeaders
   ${ACE_INCLUDE_DIR}

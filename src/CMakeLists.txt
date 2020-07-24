@@ -13,18 +13,17 @@ set(sources_Debugging "")
 if( SERVERS )
   if (WIN32)
       set(sources_Debugging
-        ${CMAKE_SOURCE_DIR}/src/shared/Debugging/WheatyExceptionReport.cpp
-        ${CMAKE_SOURCE_DIR}/src/shared/Debugging/WheatyExceptionReport.h
+        ${CMAKE_SOURCE_DIR}/src/common/Debugging/WheatyExceptionReport.cpp
+        ${CMAKE_SOURCE_DIR}/src/common/Debugging/WheatyExceptionReport.h
       )
   else(WIN32)
     if (UNIX)
-        set(sources_Debugging ${CMAKE_SOURCE_DIR}/src/shared/Debugging/UnixDebugger.cpp)
+        set(sources_Debugging ${CMAKE_SOURCE_DIR}/src/common/Debugging/UnixDebugger.cpp)
     endif (UNIX)
   endif(WIN32)
 
   add_subdirectory(genrev)
   add_subdirectory(framework)
-  add_subdirectory(shared)
 
   add_subdirectory(common)
   add_subdirectory(server)
