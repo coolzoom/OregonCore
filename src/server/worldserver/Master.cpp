@@ -30,7 +30,7 @@
 #include "DBCStores.h"
 #include "RARunnable.h"
 #include "Utilities/Util.h"
-#include "OCSoap.h"
+#include "TCSoap/TCSoap.h"
 #include "Console.h"
 #include "ObjectAccessor.h"
 #include "MapManager.h"

@@ -11,6 +11,7 @@
 file(GLOB sources_localdir
   *.cpp
   RegressionTests/*.cpp
+  TCSoap/*.cpp
 )
 
 set(oregon-core_SRCS
