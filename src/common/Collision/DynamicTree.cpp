@@ -20,7 +20,7 @@
 #include "Timer.h"
 #include "BoundingIntervalHierarchyWrapper.h"
 #include "RegularGrid.h"
-#include "GameObjectModel.h"
+#include "Models/GameObjectModel.h"
 
 using G3D::Ray;
 
