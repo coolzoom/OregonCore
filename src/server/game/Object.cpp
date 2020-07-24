@@ -30,7 +30,7 @@
 #include "Utilities/Util.h"
 #include "ObjectAccessor.h"
 #include "Transports.h"
-#include "VMapFactory.h"
+#include "Management/VMapFactory.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"

@@ -44,7 +44,7 @@
 #include "TemporarySummon.h"
 #include "AuctionHouseBot.h"
 #include "WaypointMovementGenerator.h"
-#include "VMapFactory.h"
+#include "Management/VMapFactory.h"
 #include "MoveMap.h"
 #include "GameEventMgr.h"
 #include "PoolMgr.h"
@@ -64,7 +64,7 @@
 #include "WardenDataStorage.h"
 #include "DisableMgr.h"
 #include "ConditionMgr.h"
-#include "VMapManager2.h"
+#include "Management/VMapManager2.h"
 #include "M2Stores.h"
 
 #include <ace/Dirent.h>

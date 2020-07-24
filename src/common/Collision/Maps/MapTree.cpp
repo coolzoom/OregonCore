@@ -16,8 +16,8 @@
  */
 
 #include "MapTree.h"
-#include "ModelInstance.h"
-#include "VMapManager2.h"
+#include "Models/ModelInstance.h"
+#include "Management/VMapManager2.h"
 #include "VMapDefinitions.h"
 
 #include <string>

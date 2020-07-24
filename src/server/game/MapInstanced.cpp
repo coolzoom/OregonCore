@@ -19,7 +19,7 @@
 #include "ObjectMgr.h"
 #include "MapManager.h"
 #include "Battleground.h"
-#include "VMapFactory.h"
+#include "Management/VMapFactory.h"
 #include "InstanceSaveMgr.h"
 #include "World.h"
 

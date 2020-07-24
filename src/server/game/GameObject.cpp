@@ -41,7 +41,7 @@
 #include "Utilities/Util.h"
 #include "OutdoorPvPMgr.h"
 #include "BattlegroundAV.h"
-#include "GameObjectModel.h"
+#include "Models/GameObjectModel.h"
 #include "DynamicTree.h"
 #include "Transports.h"
 #include "Log.h"

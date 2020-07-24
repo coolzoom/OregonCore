@@ -18,7 +18,7 @@
 #include "WorldModel.h"
 #include "ModelInstance.h"
 #include "VMapDefinitions.h"
-#include "MapTree.h"
+#include "Maps/MapTree.h"
 
 using G3D::Vector3;
 using G3D::Ray;

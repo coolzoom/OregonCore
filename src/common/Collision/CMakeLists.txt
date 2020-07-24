@@ -12,7 +12,14 @@ if( USE_COREPCH )
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-file(GLOB sources_localdir *.cpp *.h)
+file(GLOB sources_localdir *.cpp *.h
+  Management/*.cpp
+  Management/*.h 
+  Maps/*.cpp
+  Maps/*.h 
+  Models/*.cpp
+  Models/*.h 
+)
 
 set(collision_STAT_SRCS
   ${collision_STAT_SRCS}

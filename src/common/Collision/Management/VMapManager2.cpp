@@ -20,9 +20,9 @@
 #include <string>
 #include <sstream>
 #include "VMapManager2.h"
-#include "MapTree.h"
-#include "ModelInstance.h"
-#include "WorldModel.h"
+#include "Maps/MapTree.h"
+#include "Models/ModelInstance.h"
+#include "Models/WorldModel.h"
 #include "VMapDefinitions.h"
 #include <G3D/Vector3.h>
 #include <ace/Null_Mutex.h>

@@ -22,7 +22,7 @@
 #include "MoveSplineInit.h"
 #include "MoveSpline.h"
 #include "PathFinder.h"
-#include "VMapFactory.h"
+#include "Management/VMapFactory.h"
 
 #define MIN_QUIET_DISTANCE 20.0f
 #define MAX_QUIET_DISTANCE 25.0f

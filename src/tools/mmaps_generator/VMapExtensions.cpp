@@ -17,10 +17,10 @@
 
 #include <vector>
 
-#include "MapTree.h"
-#include "VMapManager2.h"
-#include "WorldModel.h"
-#include "ModelInstance.h"
+#include "Maps/MapTree.h"
+#include "Management/VMapManager2.h"
+#include "Models/WorldModel.h"
+#include "Models/ModelInstance.h"
 
 using namespace std;
 

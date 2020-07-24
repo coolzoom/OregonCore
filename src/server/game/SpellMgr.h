@@ -30,7 +30,7 @@
 #include "DisableMgr.h"
 
 #include "Utilities/UnorderedMap.h"
-#include "VMapFactory.h"
+#include "Management/VMapFactory.h"
 #include <map>
 
 class Unit;

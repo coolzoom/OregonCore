@@ -38,7 +38,7 @@
 #include "CellImpl.h"
 #include "SharedDefines.h"
 #include "LootMgr.h"
-#include "VMapFactory.h"
+#include "Management/VMapFactory.h"
 #include "Battleground.h"
 #include "Utilities/Util.h"
 #include "TemporarySummon.h"

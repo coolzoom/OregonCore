@@ -20,9 +20,9 @@
 #include "MMapCommon.h"
 #include "MapBuilder.h"
 
-#include "VMapManager2.h"
-#include "MapTree.h"
-#include "ModelInstance.h"
+#include "Management/VMapManager2.h"
+#include "Maps/MapTree.h"
+#include "Models/ModelInstance.h"
 
 
 namespace MMAP

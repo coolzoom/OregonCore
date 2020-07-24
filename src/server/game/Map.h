@@ -32,7 +32,7 @@
 #include "MapRefManager.h"
 
 #include "DynamicTree.h"
-#include "GameObjectModel.h"
+#include "Models/GameObjectModel.h"
 
 #include <bitset>
 #include <list>
