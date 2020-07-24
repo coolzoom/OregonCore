@@ -18,7 +18,7 @@
 #include "vmapexport.h"
 #include "model.h"
 #include "wmo.h"
-#include "mpq_libmpq.h"
+#include "mpq_libmpq04.h"
 #include <cassert>
 #include <algorithm>
 #include <cstdio>
