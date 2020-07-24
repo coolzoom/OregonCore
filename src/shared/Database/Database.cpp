@@ -19,7 +19,7 @@
 #include "Config/Config.h"
 
 #include "Common.h"
-#include "../../game/UpdateFields.h"
+#include "UpdateFields.h"
 
 #include "Utilities/Util.h"
 #include "Platform/Define.h"

@@ -27,8 +27,6 @@ if( SERVERS )
   add_subdirectory(shared)
 
   add_subdirectory(collision)
-  add_subdirectory(game)
-  add_subdirectory(scripts)
 
   add_subdirectory(server)
 else()
