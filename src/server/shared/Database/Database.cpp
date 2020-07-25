@@ -16,7 +16,7 @@
  */
 
 #include "DatabaseEnv.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 
 #include "Common.h"
 #include "UpdateFields.h"

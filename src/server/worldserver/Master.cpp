@@ -25,7 +25,7 @@
 #include "Log.h"
 #include "Timer.h"
 #include "SystemConfig.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "Database/DatabaseEnv.h"
 #include "DBCStores.h"
 #include "RARunnable.h"

@@ -20,7 +20,7 @@
 
 #include "World.h"
 #include "ObjectMgr.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "ItemPrototype.h"
 #include "Utilities/Util.h"
 

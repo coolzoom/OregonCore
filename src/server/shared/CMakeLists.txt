@@ -8,13 +8,33 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-file(GLOB_RECURSE sources_auth 
+# No recurse for common root becuase we have collision are using standalong cmake
+file(GLOB sources_commonlocal 
+  ${CMAKE_SOURCE_DIR}/src/common/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/*.h
+)
+
+file(GLOB_RECURSE sources_common
+  ${CMAKE_SOURCE_DIR}/src/common/Configuration/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/Configuration/*.h
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/*.cpp 
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/*.h
+  ${CMAKE_SOURCE_DIR}/src/common/Logging/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/Logging/*.h
+  ${CMAKE_SOURCE_DIR}/src/common/Platform/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/Platform/*.h
+  ${CMAKE_SOURCE_DIR}/src/common/Threading/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/Threading/*.h
+  ${CMAKE_SOURCE_DIR}/src/common/Utilities/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/Utilities/*.h
+  
+  ${CMAKE_CURRENT_SOURCE_DIR}/Packets/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Packets/*.h
+  
 )
-file(GLOB_RECURSE sources_config Config/*.cpp Config/*.h)
+
+
 file(GLOB_RECURSE sources_database Database/*.cpp Database/*.h)
-file(GLOB_RECURSE sources_utilities Utilities/*.cpp Utilities/*.h)
 
 file(GLOB sources_localdir *.cpp *.h)
 
@@ -24,10 +44,10 @@ file(GLOB sources_localdir *.cpp *.h)
 
 SET(shared_STAT_SRCS
   ${shared_STAT_SRCS}
-  ${sources_auth}
-  ${sources_config}
+  
+  ${sources_commonlocal}
+  ${sources_common}
   ${sources_database}
-  ${sources_utilities}
   ${sources_localdir}
 )
 
@@ -39,15 +59,23 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/utf8cpp
   ${CMAKE_SOURCE_DIR}/src/framework
   ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/
+
+  ${CMAKE_SOURCE_DIR}/src/common
+  ${CMAKE_SOURCE_DIR}/src/common/Configuration
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  ${CMAKE_SOURCE_DIR}/src/common/Logging
+  ${CMAKE_SOURCE_DIR}/src/common/Platform
+  ${CMAKE_SOURCE_DIR}/src/common/Threading
+  ${CMAKE_SOURCE_DIR}/src/common/Utilities
+  ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
+
   ${CMAKE_SOURCE_DIR}/src/server/game
   ${CMAKE_SOURCE_DIR}/src/server/game/Entities/
   ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Object
   ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Object/Updates
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/Auth
-  ${CMAKE_CURRENT_SOURCE_DIR}/Config
+  ${CMAKE_CURRENT_SOURCE_DIR}/Packets
   ${CMAKE_CURRENT_SOURCE_DIR}/Database
   ${ACE_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}

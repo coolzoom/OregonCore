@@ -17,7 +17,7 @@
 
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "Log.h"
 #include "RealmList.h"
 #include "AuthSocket.h"
@@ -31,7 +31,7 @@
 #include <ace/OS_NS_unistd.h>
 #include <ace/OS_NS_fcntl.h>
 #include <ace/OS_NS_sys_stat.h>
-#include "../shared/Utilities/Util.h"
+#include "Util.h"
 
 extern DatabaseType LoginDatabase;
 

@@ -28,7 +28,7 @@
 #include "MapInstanced.h"
 #include "InstanceSaveMgr.h"
 #include "Timer.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "World.h"

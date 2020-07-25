@@ -19,7 +19,7 @@
 #define __ADDONHANDLER_H
 
 #include "Common.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "Policies/Singleton.h"
 
 #include "WorldPacket.h"

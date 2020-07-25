@@ -17,7 +17,7 @@
 
 #include "Common.h"
 #include "Log.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "Console.h"
 #include "Utilities/Util.h"
 

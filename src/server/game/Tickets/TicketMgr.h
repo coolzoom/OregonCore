@@ -21,7 +21,7 @@
 #include "Policies/Singleton.h"
 #include "Database/DatabaseEnv.h"
 #include "Utilities/Util.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include <map>
 
 enum GMTicketOpenedByGMStatus
