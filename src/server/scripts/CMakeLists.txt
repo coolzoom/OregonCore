@@ -37,11 +37,11 @@ endif()
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   ${BUILDDIR}/GenLoader.cpp
-  ../game/ScriptedEscortAI.cpp
-  ../game/ScriptedGuardAI.cpp
-  ../game/ScriptedCreature.cpp
-  ../game/ScriptedFollowerAI.cpp
-  ../game/ScriptedSimpleAI.cpp
+  ../game/AI/ScriptedAI/ScriptedEscortAI.cpp
+  ../game/AI/ScriptedAI/ScriptedGuardAI.cpp
+  ../game/AI/ScriptedAI/ScriptedCreature.cpp
+  ../game/AI/ScriptedAI/ScriptedFollowerAI.cpp
+  ../game/AI/ScriptedAI/ScriptedSimpleAI.cpp
 )
 
 CU_SET_PATH("CMAKE_AC_MODULE_DIR" "${CMAKE_CURRENT_LIST_DIR}")

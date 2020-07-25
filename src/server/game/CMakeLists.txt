@@ -12,7 +12,7 @@ if (USE_COREPCH)
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-file(GLOB sources_localdir *.cpp *.h)
+file(GLOB_RECURSE sources_localdir *.cpp *.h)
 
 # Create game-libary
 
@@ -28,6 +28,7 @@ set(game_STAT_SRCS
   ${sources_localdir}
 )
 
+  
 include_directories(
   ${CMAKE_BINARY_DIR}
   ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
@@ -41,6 +42,73 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared
   ${CMAKE_SOURCE_DIR}/src/server/shared/Database
   ${CMAKE_CURRENT_SOURCE_DIR}
+  
+  ${CMAKE_CURRENT_SOURCE_DIR}/Accounts
+  ${CMAKE_CURRENT_SOURCE_DIR}/AI
+  ${CMAKE_CURRENT_SOURCE_DIR}/AI/CoreAI
+  ${CMAKE_CURRENT_SOURCE_DIR}/AI/ScriptedAI
+  ${CMAKE_CURRENT_SOURCE_DIR}/AI/SmartScripts
+  ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouse
+  ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouseBot
+  ${CMAKE_CURRENT_SOURCE_DIR}/Battlegrounds
+  ${CMAKE_CURRENT_SOURCE_DIR}/Battlegrounds/Zones
+  ${CMAKE_CURRENT_SOURCE_DIR}/Chat
+  ${CMAKE_CURRENT_SOURCE_DIR}/Chat/Channels
+  ${CMAKE_CURRENT_SOURCE_DIR}/Combat
+  ${CMAKE_CURRENT_SOURCE_DIR}/Conditions
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStores
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Corpse
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Creature
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/DynamicObject
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/GameObject
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Item
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Item/Container
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Object
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Object/Updates
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Pet
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Player
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Totem
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Transport
+  ${CMAKE_CURRENT_SOURCE_DIR}/Entities/Unit
+  ${CMAKE_CURRENT_SOURCE_DIR}/Events
+  ${CMAKE_CURRENT_SOURCE_DIR}/Globals
+  ${CMAKE_CURRENT_SOURCE_DIR}/Grids
+  ${CMAKE_CURRENT_SOURCE_DIR}/Grids/Cells
+  ${CMAKE_CURRENT_SOURCE_DIR}/Grids/Dynamic
+  ${CMAKE_CURRENT_SOURCE_DIR}/Grids/Notifiers
+  ${CMAKE_CURRENT_SOURCE_DIR}/Groups
+  ${CMAKE_CURRENT_SOURCE_DIR}/Guilds
+  ${CMAKE_CURRENT_SOURCE_DIR}/Handlers
+  ${CMAKE_CURRENT_SOURCE_DIR}/Instances
+  ${CMAKE_CURRENT_SOURCE_DIR}/Loot
+  ${CMAKE_CURRENT_SOURCE_DIR}/Mails
+  ${CMAKE_CURRENT_SOURCE_DIR}/Maps
+  ${CMAKE_CURRENT_SOURCE_DIR}/Miscellaneous
+  ${CMAKE_CURRENT_SOURCE_DIR}/Movement
+  ${CMAKE_CURRENT_SOURCE_DIR}/Movement/MovementGenerators
+  ${CMAKE_CURRENT_SOURCE_DIR}/Movement/Spline
+  ${CMAKE_CURRENT_SOURCE_DIR}/Movement/Waypoints
+  ${CMAKE_CURRENT_SOURCE_DIR}/OutdoorPvP
+  ${CMAKE_CURRENT_SOURCE_DIR}/Pools
+  ${CMAKE_CURRENT_SOURCE_DIR}/Quests
+  ${CMAKE_CURRENT_SOURCE_DIR}/Reputation
+  ${CMAKE_CURRENT_SOURCE_DIR}/Scripting
+  ${CMAKE_CURRENT_SOURCE_DIR}/Server
+  ${CMAKE_CURRENT_SOURCE_DIR}/Server/Protocol
+  ${CMAKE_CURRENT_SOURCE_DIR}/Skills
+  ${CMAKE_CURRENT_SOURCE_DIR}/Spells
+  ${CMAKE_CURRENT_SOURCE_DIR}/Spells/Aura
+  ${CMAKE_CURRENT_SOURCE_DIR}/Storages
+  ${CMAKE_CURRENT_SOURCE_DIR}/Texts
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tickets
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tools
+  ${CMAKE_CURRENT_SOURCE_DIR}/Warden
+  ${CMAKE_CURRENT_SOURCE_DIR}/Warden/Modules
+  ${CMAKE_CURRENT_SOURCE_DIR}/Weather
+  ${CMAKE_CURRENT_SOURCE_DIR}/World
+  
+  
   ${CMAKE_SOURCE_DIR}/src/server/scripts/PrecompiledHeaders
   ${ACE_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}
