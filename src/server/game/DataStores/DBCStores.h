@@ -19,7 +19,7 @@
 #define DBCSTORES_H
 
 #include "Common.h"
-#include "Database/DBCStore.h"
+#include "DataStores/DBCStore.h"
 #include "DBCStructure.h"
 
 #include <list>

@@ -38,11 +38,14 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/common/Configuration
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  ${CMAKE_SOURCE_DIR}/src/common/DataStores
   ${CMAKE_SOURCE_DIR}/src/common/Logging
   ${CMAKE_SOURCE_DIR}/src/common/Platform
   ${CMAKE_SOURCE_DIR}/src/common/Threading
   ${CMAKE_SOURCE_DIR}/src/common/Utilities
   ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
+  ${CMAKE_SOURCE_DIR}/src/server/database
+  ${CMAKE_SOURCE_DIR}/src/server/database/Database
   
   ${CMAKE_SOURCE_DIR}/src/server/game
   

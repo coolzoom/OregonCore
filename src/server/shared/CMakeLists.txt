@@ -19,6 +19,8 @@ file(GLOB_RECURSE sources_common
   ${CMAKE_SOURCE_DIR}/src/common/Configuration/*.h
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/*.cpp 
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/*.h
+  ${CMAKE_SOURCE_DIR}/src/common/DataStores/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/DataStores/*.h
   ${CMAKE_SOURCE_DIR}/src/common/Logging/*.cpp 
   ${CMAKE_SOURCE_DIR}/src/common/Logging/*.h
   ${CMAKE_SOURCE_DIR}/src/common/Platform/*.cpp 
@@ -34,7 +36,10 @@ file(GLOB_RECURSE sources_common
 )
 
 
-file(GLOB_RECURSE sources_database Database/*.cpp Database/*.h)
+file(GLOB_RECURSE sources_database 
+  ${CMAKE_SOURCE_DIR}/src/server/database/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/server/database/*.h
+)
 
 file(GLOB sources_localdir *.cpp *.h)
 
@@ -64,11 +69,14 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/common/Configuration
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography
   ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  ${CMAKE_SOURCE_DIR}/src/common/DataStores
   ${CMAKE_SOURCE_DIR}/src/common/Logging
   ${CMAKE_SOURCE_DIR}/src/common/Platform
   ${CMAKE_SOURCE_DIR}/src/common/Threading
   ${CMAKE_SOURCE_DIR}/src/common/Utilities
   ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
+  ${CMAKE_SOURCE_DIR}/src/server/database
+  ${CMAKE_SOURCE_DIR}/src/server/database/Database
 
   ${CMAKE_SOURCE_DIR}/src/server/game
   ${CMAKE_SOURCE_DIR}/src/server/game/Entities/
