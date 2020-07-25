@@ -8,7 +8,10 @@
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-file(GLOB_RECURSE sources_auth Auth/*.cpp Auth/*.h)
+file(GLOB_RECURSE sources_auth 
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/*.cpp 
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/*.h
+)
 file(GLOB_RECURSE sources_config Config/*.cpp Config/*.h)
 file(GLOB_RECURSE sources_database Database/*.cpp Database/*.h)
 file(GLOB_RECURSE sources_utilities Utilities/*.cpp Utilities/*.h)
@@ -36,6 +39,8 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/utf8cpp
   ${CMAKE_SOURCE_DIR}/src/framework
   ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
   ${CMAKE_SOURCE_DIR}/src/server/game
   ${CMAKE_SOURCE_DIR}/src/server/game/Entities/
   ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Object

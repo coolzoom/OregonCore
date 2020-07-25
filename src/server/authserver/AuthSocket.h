@@ -19,8 +19,8 @@
 #define _AUTHSOCKET_H
 
 #include "Common.h"
-#include "Auth/BigNumber.h"
-#include "Auth/Sha1.h"
+#include "BigNumber.h"
+#include "Sha1.h"
 #include "ByteBuffer.h"
 
 #include "BufferedSocket.h"

@@ -80,6 +80,10 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/zlib
   ${CMAKE_SOURCE_DIR}/src/framework
   ${CMAKE_SOURCE_DIR}/src/common/Collision
+  
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  
   ${CMAKE_SOURCE_DIR}/src/server/game
   
   ${CMAKE_SOURCE_DIR}/src/server/game/Accounts

@@ -38,6 +38,10 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared
   ${CMAKE_SOURCE_DIR}/src/server/shared/Database
   ${CMAKE_SOURCE_DIR}/src/framework
+  
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  
   ${CMAKE_SOURCE_DIR}/src/server/game
  
   ${CMAKE_SOURCE_DIR}/src/server/game/Accounts

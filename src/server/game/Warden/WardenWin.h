@@ -18,9 +18,9 @@
 #ifndef _WARDEN_WIN_H
 #define _WARDEN_WIN_H
 
-#include "Auth/SARC4.h"
+#include "SARC4.h"
 #include <map>
-#include "Auth/BigNumber.h"
+#include "BigNumber.h"
 #include "ByteBuffer.h"
 
 enum WardenCheckType

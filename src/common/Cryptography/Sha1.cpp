@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Auth/Sha1.h"
+#include "Sha1.h"
 #include <stdarg.h>
 
 Sha1Hash::Sha1Hash()

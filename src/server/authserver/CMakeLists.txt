@@ -27,6 +27,10 @@ include_directories(
   ${CMAKE_BINARY_DIR}
   ${CMAKE_SOURCE_DIR}/src/server/shared
   ${CMAKE_SOURCE_DIR}/src/server/shared/Database
+  
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  
   ${CMAKE_SOURCE_DIR}/src/framework
   ${ACE_INCLUDE_DIR}
   ${MYSQL_INCLUDE_DIR}

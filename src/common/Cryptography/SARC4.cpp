@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Auth/SARC4.h"
+#include "SARC4.h"
 #include <openssl/sha.h>
 
 SARC4::SARC4(uint32 len) : m_ctx(EVP_CIPHER_CTX_new())

@@ -33,6 +33,10 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/shared/Config
   ${CMAKE_SOURCE_DIR}/src/server/shared/Database
   ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
+  
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/
+  ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
+  
   ${CMAKE_SOURCE_DIR}/src/server/game
   
   ${CMAKE_SOURCE_DIR}/src/server/game/Accounts

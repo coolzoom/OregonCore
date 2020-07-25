@@ -18,9 +18,9 @@
 #ifndef _WARDEN_BASE_H
 #define _WARDEN_BASE_H
 
-#include "Auth/SARC4.h"
+#include "SARC4.h"
 #include <map>
-#include "Auth/BigNumber.h"
+#include "BigNumber.h"
 #include "ByteBuffer.h"
 
 enum WardenOpcodes

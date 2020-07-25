@@ -19,7 +19,7 @@
 #define _WARDEN_DATA_STORAGE_H
 
 #include <map>
-#include "Auth/BigNumber.h"
+#include "BigNumber.h"
 
 struct WardenData
 {
