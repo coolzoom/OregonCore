@@ -52,7 +52,7 @@ bool Eluna::OnCommand(Player* player, const char* text)
             std::string reload(creload);
             std::string eluna(celuna);
             std::transform(reload.begin(), reload.end(), reload.begin(), ::tolower);
-            if (reload == "reload")
+            if (reload == ".reload" || reload == "reload")
             {
                 std::transform(eluna.begin(), eluna.end(), eluna.begin(), ::tolower);
                 if (std::string("eluna").find(eluna) == 0)
