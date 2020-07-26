@@ -119,7 +119,9 @@ class TempSummon;
 class CreatureAI;
 class ZoneScript;
 class Unit;
+#ifdef ELUNA
 class ElunaEventProcessor;
+#endif
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
 
@@ -922,8 +924,11 @@ class WorldObject : public Object, public WorldLocation
         uint64 lootingGroupLeaderGUID;                      // used to find group which is looting corpse
 
         MovementInfo m_movementInfo;
-
+		
+#ifdef ELUNA
         ElunaEventProcessor* elunaEvents;
+#endif
+		
     protected:
         explicit WorldObject(bool isWorldObject); //note: here it means if it is in grid object list or world object list
         std::string m_name;

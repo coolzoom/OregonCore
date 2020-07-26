@@ -34,7 +34,11 @@
 #include "Chat.h"
 #include "ArenaTeam.h"
 #include "DisableMgr.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 
 INSTANTIATE_SINGLETON_1(BattlegroundMgr);
 
@@ -1484,7 +1488,10 @@ uint32 BattlegroundMgr::CreateBattleground(uint32 bgTypeId, uint32 MinPlayersPer
     //add Battleground instance to FreeSlotQueue (.back() will return the template!)
     bg->AddToBGFreeSlotQueue();
 
+
+#ifdef ELUNA
     sEluna->OnBGCreate(bg, (BattlegroundTypeId)bgTypeId, bg->GetInstanceID());
+#endif
 
     // do NOT add to update list, since this is a template battleground!
 

@@ -41,7 +41,10 @@
 #include "MapManager.h"
 #include "SystemConfig.h"
 #include "ScriptMgr.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 
 class LoginQueryHolder : public SqlQueryHolder
 {
@@ -391,8 +394,11 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
     sLog.outBasic("Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), pNewChar->GetGUIDLow());
     sLog.outChar("Account: %d (IP: %s) Create Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), pNewChar->GetGUIDLow());
 
+#ifdef ELUNA
     // used by eluna
     sEluna->OnCreate(pNewChar);
+#endif
+
 
     delete pNewChar;                                        // created only to call SaveToDB()
 
@@ -444,8 +450,11 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recv_data)
     sLog.outDetail("Account: %d (IP: %s) Delete Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), GUID_LOPART(guid));
     sLog.outChar("Account: %d (IP: %s) Delete Character:[%s] (GUID: %u)", GetAccountId(), IP_str.c_str(), name.c_str(), GUID_LOPART(guid));
 
+#ifdef ELUNA
     // used by eluna
     sEluna->OnDelete(GUID_LOPART(guid));
+#endif
+
 
     if (sLog.IsLogTypeEnabled(LOG_TYPE_CHAR))                                // optimize GetPlayerDump call
     {
@@ -710,12 +719,15 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         SendNotification(LANG_RESET_TALENTS);
     }
 
-    // used by eluna
+
+#ifdef ELUNA    // used by eluna
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
         sEluna->OnFirstLogin(pCurrChar);
 
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_FIRST))
         pCurrChar->RemoveAtLoginFlag(AT_LOGIN_FIRST);
+
+#endif
 
     // announce group about member online (must be after add to player list to receive announce to self)
     if (Group* group = pCurrChar->GetGroup())
@@ -794,8 +806,11 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     //Hook for OnLogin Event
     sScriptMgr.OnPlayerLogin(pCurrChar, firstlogin);
 
+#ifdef ELUNA
     // used by eluna
     sEluna->OnLogin(pCurrChar);
+#endif
+
 
     delete holder;
 }

@@ -33,7 +33,11 @@
 #include "MapManager.h"
 #include "SpellMgr.h"
 #include "ScriptMgr.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 #include "InstanceSaveMgr.h"
 
 bool ChatHandler::load_command_table = true;
@@ -236,8 +240,12 @@ bool ChatHandler::ExecuteCommandInTable(std::vector<ChatCommand> const& table, c
         {
             if (!ExecuteCommandInTable(table[i].ChildCommands, text, fullcmd.c_str()))
             {
+
+#ifdef ELUNA
                 if (!sEluna->OnCommand(m_session ? m_session->GetPlayer() : NULL, fullcmd.c_str()))
                     return true;
+#endif
+
 
                 if (text && text[0] != '\0')
                     SendSysMessage(LANG_NO_SUBCMD);

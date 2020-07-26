@@ -39,8 +39,10 @@
 #include "OutdoorPvPMgr.h"
 #include "packet_builder.h"
 #include "MapManager.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
 #include "ElunaEventMgr.h"
+#endif
 
 uint32 GuidHigh2TypeId(uint32 guid_hi)
 {
@@ -82,8 +84,10 @@ Object::Object()
 
 WorldObject::~WorldObject()
 {
+#ifdef ELUNA
     delete elunaEvents;
     elunaEvents = NULL;
+#endif
 
     // this may happen because there are many !create/delete
     if (IsWorldObject() && m_currMap)
@@ -99,7 +103,9 @@ WorldObject::~WorldObject()
 
 void WorldObject::Update(uint32 time_diff)
 {
+#ifdef ELUNA
     elunaEvents->Update(time_diff);
+#endif
 }
 
 Object::~Object()
@@ -1102,7 +1108,9 @@ bool Object::PrintIndexError(uint32 index, bool set) const
 
 WorldObject::WorldObject(bool isWorldObject):
       WorldLocation()
+#ifdef ELUNA
     , elunaEvents(NULL)
+#endif
     , m_groupLootTimer(0)
     , lootingGroupLeaderGUID(0)
     , m_isWorldObject(isWorldObject)
@@ -1997,9 +2005,12 @@ void WorldObject::SetMap(Map* map)
     if (IsWorldObject())
         m_currMap->AddWorldObject(this);
 
+#ifdef ELUNA
     delete elunaEvents;
     // On multithread replace this with a pointer to map's Eluna pointer stored in a map
     elunaEvents = new ElunaEventProcessor(&Eluna::GEluna, this);
+#endif
+
 }
 
 void WorldObject::ResetMap()
@@ -2010,8 +2021,11 @@ void WorldObject::ResetMap()
         m_currMap->RemoveWorldObject(this);
     m_currMap = NULL;
 
+#ifdef ELUNA
     delete elunaEvents;
     elunaEvents = NULL;
+#endif
+
     //maybe not for corpse
     //m_mapId = 0;
     //m_InstanceId = 0;
@@ -2129,8 +2143,11 @@ TempSummon* WorldObject::SummonCreature(uint32 entry, const Position& pos, TempS
     {
         if (TempSummon* summon = map->SummonCreature(entry, pos, NULL, duration, isType(TYPEMASK_UNIT) ? (Unit*)this : NULL, NULL, spwtype))
         {
+#ifdef ELUNA
             if (Unit* summoner = ToUnit())
                 sEluna->OnSummoned(summon, summoner);
+#endif
+
             return summon;
         }
     }

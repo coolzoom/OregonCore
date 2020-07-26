@@ -44,7 +44,11 @@
 #include "GameEventMgr.h"
 #include "CreatureGroups.h"
 #include "MoveSpline.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 #include <fstream>
 
 void TrainerSpellData::Clear()
@@ -190,7 +194,11 @@ void Creature::AddToWorld()
         if (m_zoneScript)
             m_zoneScript->OnCreatureCreate(this, true);
 
+
+#ifdef ELUNA
         sEluna->OnAddToWorld(this);
+#endif
+
 
         ObjectAccessor::Instance().AddObject(this);
         Unit::AddToWorld();
@@ -206,7 +214,11 @@ void Creature::RemoveFromWorld()
         if (m_zoneScript)
             m_zoneScript->OnCreatureCreate(this, false);
 
+
+#ifdef ELUNA
         sEluna->OnRemoveFromWorld(this);
+#endif
+
 
         if (m_formation)
             sFormationMgr.RemoveCreatureFromGroup(m_formation, this);

@@ -28,8 +28,11 @@
 #include "CreatureAIImpl.h"
 #include "ScriptLoader.h"
 #include "ScriptSystem.h"
+#ifdef ELUNA
 #include "Player.h"
 #include "LuaEngine.h"
+#endif
+
 
 INSTANTIATE_SINGLETON_1(ScriptMgr);
 
@@ -579,8 +582,11 @@ bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Ite
     ASSERT(caster);
     ASSERT(target);
 
+
+#ifdef ELUNA
     if (sEluna->OnDummyEffect(caster, spellId, (SpellEffIndex)effIndex, target))
         return true;
+#endif
 
     GET_SCRIPT_RET(ItemScript, target->GetProto()->ScriptId, tmpscript, false);
     return tmpscript->OnDummyEffect(caster, spellId, effIndex, target);
@@ -616,8 +622,11 @@ bool ScriptMgr::OnQuestAccept(Player* player, Item* item, Quest const* quest)
     ASSERT(quest);
     ASSERT(item);
 
+
+#ifdef ELUNA
     if (sEluna->OnQuestAccept(player, item, quest))
         return true;
+#endif
 
     GET_SCRIPT_RET(ItemScript, item->GetProto()->ScriptId, tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -629,8 +638,10 @@ bool ScriptMgr::OnItemUse(Player* player, Item* item, SpellCastTargets const& ta
     ASSERT(player);
     ASSERT(item);
 
+#ifdef ELUNA
     if (!sEluna->OnUse(player, item, targets))
         return true;
+#endif
 
     GET_SCRIPT_RET(ItemScript, item->GetProto()->ScriptId, tmpscript, false);
     return tmpscript->OnUse(player, item, targets);
@@ -641,9 +652,11 @@ bool ScriptMgr::OnDummyEffect(Unit* caster, uint32 spellId, uint32 effIndex, Cre
     ASSERT(caster);
     ASSERT(target);
 
+
+#ifdef ELUNA
     if (sEluna->OnDummyEffect(caster, spellId, (SpellEffIndex)effIndex, target))
         return true;
-
+#endif
     GET_SCRIPT_RET(CreatureScript, target->GetScriptId(), tmpscript, false);
     return tmpscript->OnDummyEffect(caster, spellId, effIndex, target);
 }
@@ -653,9 +666,11 @@ bool ScriptMgr::OnGossipHello(Player* player, Creature* creature)
 {
     ASSERT(player);
     ASSERT(creature);
-
+#ifdef ELUNA
     if (sEluna->OnGossipHello(player, creature))
         return true;
+#endif
+
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -667,8 +682,11 @@ bool ScriptMgr::OnGossipSelect(Player* player, Creature* creature, uint32 sender
     ASSERT(player);
     ASSERT(creature);
 
+
+#ifdef ELUNA
     if (sEluna->OnGossipSelect(player, creature, sender, action))
         return true;
+#endif
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -681,8 +699,11 @@ bool ScriptMgr::OnGossipSelectCode(Player* player, Creature* creature, uint32 se
     ASSERT(creature);
     ASSERT(code);
 
+
+#ifdef ELUNA
     if (sEluna->OnGossipSelectCode(player, creature, sender, action, code))
         return true;
+#endif
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -695,8 +716,12 @@ bool ScriptMgr::OnQuestAccept(Player* player, Creature* creature, Quest const* q
     ASSERT(creature);
     ASSERT(quest);
 
+#ifdef ELUNA
+
     if (sEluna->OnQuestAccept(player, creature, quest))
         return true;
+#endif
+
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -741,8 +766,11 @@ uint32 ScriptMgr::GetDialogStatus(Player* player, Creature* creature)
     ASSERT(player);
     ASSERT(creature);
 
+
+#ifdef ELUNA
     if (uint32 dialogId = sEluna->GetDialogStatus(player, creature))
         return dialogId;
+#endif
 
     // TODO: 100 is a funny magic number to have hanging around here...
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, 100);
@@ -754,8 +782,11 @@ CreatureAI* ScriptMgr::GetCreatureAI(Creature* creature)
 {
     ASSERT(creature);
 
+#ifdef ELUNA
     if (CreatureAI* luaAI = sEluna->GetAI(creature))
         return luaAI;
+#endif
+
 
     GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, NULL);
     return tmpscript->GetAI(creature);
@@ -774,11 +805,15 @@ bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
     ASSERT(player);
     ASSERT(go);
 
+
+#ifdef ELUNA
     if (sEluna->OnGossipHello(player, go))
         return true;
 
     if (sEluna->OnGameObjectUse(player, go))
         return true;
+#endif
+
 
     GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -790,8 +825,11 @@ bool ScriptMgr::OnGossipSelect(Player* player, GameObject* go, uint32 sender, ui
     ASSERT(player);
     ASSERT(go);
 
+#ifdef ELUNA
     if (sEluna->OnGossipSelect(player, go, sender, action))
         return true;
+#endif
+
 
     GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -804,8 +842,11 @@ bool ScriptMgr::OnGossipSelectCode(Player* player, GameObject* go, uint32 sender
     ASSERT(go);
     ASSERT(code);
 
+
+#ifdef ELUNA
     if (sEluna->OnGossipSelectCode(player, go, sender, action, code))
         return true;
+#endif
 
     GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -818,8 +859,11 @@ bool ScriptMgr::OnQuestAccept(Player* player, GameObject* go, Quest const* quest
     ASSERT(go);
     ASSERT(quest);
 
+#ifdef ELUNA
     if (sEluna->OnQuestAccept(player, go, quest))
         return true;
+#endif
+
 
     GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, false);
     player->PlayerTalkClass->ClearMenus();
@@ -854,8 +898,10 @@ uint32 ScriptMgr::GetDialogStatus(Player* player, GameObject* go)
     ASSERT(player);
     ASSERT(go);
 
+#ifdef ELUNA
     if (uint32 dialogId = sEluna->GetDialogStatus(player, go))
         return dialogId;
+#endif
 
     GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, 100);
     player->PlayerTalkClass->ClearMenus();
@@ -884,8 +930,11 @@ bool ScriptMgr::OnTrigger(Player* player, AreaTriggerEntry const* trigger)
     ASSERT(player);
     ASSERT(trigger);
 
+#ifdef ELUNA
     if (sEluna->OnAreaTrigger(player, trigger))
         return true;
+#endif
+
 
     GET_SCRIPT_RET(AreaTriggerScript, sObjectMgr.GetAreaTriggerScriptId(trigger->id), tmpscript, false);
     return tmpscript->OnTrigger(player, trigger);

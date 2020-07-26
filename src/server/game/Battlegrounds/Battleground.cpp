@@ -28,7 +28,10 @@
 #include "GridNotifiersImpl.h"
 #include "ScriptMgr.h"
 #include "Formulas.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 
 namespace Oregon
 {
@@ -202,7 +205,10 @@ Battleground::Battleground()
 
 Battleground::~Battleground()
 {
+
+#ifdef ELUNA
     //sEluna->OnBGDestroy(this, GetTypeID(), GetInstanceID());
+#endif
 
     // remove objects and creatures
     // (this is done automatically in mapmanager update, when the instance is reset after the reset time)
@@ -680,7 +686,10 @@ void Battleground::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player*
 
 void Battleground::EndBattleground(uint32 winner)
 {
+
+#ifdef ELUNA
     sEluna->OnBGEnd(this, (BattlegroundTypeId)GetTypeID(), GetInstanceID(), (Team)winner);
+#endif
 
     this->RemoveFromBGFreeSlotQueue();
     uint32 almost_winning_team = HORDE;
@@ -1174,7 +1183,10 @@ void Battleground::StartBattleground()
     if (m_IsRated)
         sLog.outArena("Arena match type: %u for Team1Id: %u - Team2Id: %u started.", m_ArenaType, m_ArenaTeamIds[BG_TEAM_ALLIANCE], m_ArenaTeamIds[BG_TEAM_HORDE]);
 
+#ifdef ELUNA
     sEluna->OnBGStart(this, (BattlegroundTypeId)GetTypeID(), GetInstanceID());
+#endif
+
 }
 
 void Battleground::AddPlayer(Player* plr)

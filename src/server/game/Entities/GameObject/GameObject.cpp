@@ -45,7 +45,12 @@
 #include "DynamicTree.h"
 #include "Transports.h"
 #include "Log.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
+
 
 GameObject::GameObject() : WorldObject(false), m_model(nullptr), m_AI(nullptr)
 {
@@ -133,7 +138,10 @@ void GameObject::AddToWorld()
         if (m_zoneScript)
             m_zoneScript->OnGameObjectCreate(this, true);
 
+
+#ifdef ELUNA
         sEluna->OnAddToWorld(this);
+#endif
 
         ObjectAccessor::Instance().AddObject(this);
 
@@ -158,8 +166,12 @@ void GameObject::RemoveFromWorld()
     {
         if (m_zoneScript)
             m_zoneScript->OnGameObjectCreate(this, false);
+
+#ifdef ELUNA
 		
         sEluna->OnRemoveFromWorld(this);
+#endif
+
 
         RemoveFromOwner();
 
@@ -248,7 +260,10 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, float x, float
 
     AIM_Initialize();
 
+
+#ifdef ELUNA
     sEluna->OnSpawn(this);
+#endif
 
     return true;
 }
@@ -266,8 +281,12 @@ void GameObject::Update(uint32 diff)
     else if (!AIM_Initialize())
         sLog.outError("Could not initialize GameObjectAI");
 
+#ifdef ELUNA
     // used by eluna
     sEluna->UpdateAI(this, diff);
+#endif
+
+
 
     switch (m_lootState)
     {
@@ -1529,7 +1548,10 @@ void GameObject::SetLootState(LootState s, Unit* unit)
     m_lootState = s;
 
     AI()->OnStateChanged(s, unit);
+
+#ifdef ELUNA
     sEluna->OnLootStateChanged(this, s);
+#endif
 
     if (m_model)
     {
@@ -1688,7 +1710,10 @@ void GameObject::SetGoState(GOState state)
 {
     SetUInt32Value(GAMEOBJECT_STATE, state);
 
-    sEluna->OnGameObjectStateChanged(this, state);
+#ifdef ELUNA
+   sEluna->OnGameObjectStateChanged(this, state);
+#endif
+
 
     if (m_model && !IsTransport())
     {

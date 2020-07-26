@@ -66,7 +66,10 @@
 #include "ConditionMgr.h"
 #include "Management/VMapManager2.h"
 #include "M2Stores.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 #include <ace/Dirent.h>
 #include <ace/OS_NS_sys_stat.h>
@@ -1101,6 +1104,7 @@ void World::LoadConfigSettings(bool reload)
         m_SQLUpdatesPath += '/';
 #endif
 
+#ifdef ELUNA
     m_configs[CONFIG_BOOL_ELUNA_ENABLED] = sConfig.GetBoolDefault("Eluna.Enabled", true);
     if (reload)
     {
@@ -1108,6 +1112,8 @@ void World::LoadConfigSettings(bool reload)
         // call ScriptMgr if we're reloading the configuration
         sScriptMgr.OnConfigLoad(reload);
     }
+
+#endif
 
     // module
     m_ModSQLUpdatesPath = sConfig.GetStringDefault("DatabaseUpdater.ModPathToUpdates", "");
@@ -1484,10 +1490,12 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadGossipMenuItemsLocales();
     sObjectMgr.SetDBCLocaleIndex(GetDefaultDbcLocale());        // Get once for all the locale index of DBC language (console/broadcasts)
     sConsole.SetLoadingLabel(">>> Localization strings loaded");
-
+	
+#ifdef ELUNA
     ///- Initialize Lua Engine
     sLog.outString("Initialize Eluna Lua Engine...");
     Eluna::Initialize();
+#endif
 
     sConsole.SetLoadingLabel("Loading Page Texts...");
     sObjectMgr.LoadPageTexts();
@@ -1870,11 +1878,13 @@ void World::SetInitialWorldSettings()
     sConsole.SetLoadingLabel("Initialize AuctionHouseBot...", false);
     auctionbot.Initialize();
 
+#ifdef ELUNA
     ///- Run eluna scripts.
     // in multithread foreach: run scripts
     sEluna->RunScripts();
     sEluna->OnConfigLoad(false); // Must be done after Eluna is initialized and scripts have run
     sLog.outString();
+#endif 
 
     // Delete all characters which have been deleted X days before
     Player::DeleteOldCharacters();
@@ -2199,8 +2209,10 @@ void World::Update(uint32 diff)
     sOutdoorPvPMgr.Update(diff);
     RecordTimeDiff("UpdateOutdoorPvPMgr");
 
+#ifdef ELUNA
     ///- used by eluna
     sEluna->OnWorldUpdate(diff);
+#endif 
 
     ///- Delete all characters which have been deleted X days before
     if (m_timers[WUPDATE_DELETECHARS].Passed())
@@ -2234,9 +2246,12 @@ void World::Update(uint32 diff)
 
     // And last, but not least handle the issued cli commands
     ProcessCliCommands();
-
+	
+#ifdef ELUNA
     ///- used by eluna
     sEluna->OnWorldUpdate(diff);
+#endif
+
 }
 
 void World::ForceGameEventUpdate()
@@ -2620,9 +2635,10 @@ void World::ShutdownServ(uint32 time, uint32 options, uint8 exitcode)
         m_ShutdownTimer = time;
         ShutdownMsg(true);
     }
-
+#ifdef ELUNA
     ///- Used by Eluna
     sEluna->OnShutdownInitiate(ShutdownExitCode(exitcode), ShutdownMask(options));
+#endif
 }
 
 // Display a shutdown message to the user(s)
@@ -2665,9 +2681,12 @@ void World::ShutdownCancel()
     SendServerMessage(msgid);
 
     DEBUG_LOG("Server %s cancelled.", (m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutdown"));
-
+	
+#ifdef ELUNA
     ///- Used by Eluna
     sEluna->OnShutdownCancel();
+#endif
+
 }
 
 // Send a server message to the user(s)

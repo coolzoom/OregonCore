@@ -21,7 +21,11 @@
 #include "WorldPacket.h"
 #include "Database/DatabaseEnv.h"
 #include "ItemEnchantmentMgr.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 
 void AddItemsSetItem(Player* player, Item* item)
 {
@@ -284,8 +288,11 @@ void Item::UpdateDuration(Player* owner, uint32 diff)
 
     if (GetUInt32Value(ITEM_FIELD_DURATION) <= diff)
     {
+
+#ifdef ELUNA
         // used by eluna
         sEluna->OnExpire(owner, GetProto());
+#endif
 
         owner->DestroyItem(GetBagSlot(), GetSlot(), true);
         return;

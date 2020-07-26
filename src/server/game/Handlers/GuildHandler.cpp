@@ -24,7 +24,9 @@
 #include "Guild.h"
 #include "MapManager.h"
 #include "SocialMgr.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
 {
@@ -954,8 +956,11 @@ void WorldSession::HandleGuildBankDeposit(WorldPacket& recv_data)
     // log
     pGuild->LogBankEvent(GUILD_BANK_LOG_DEPOSIT_MONEY, uint8(0), GetPlayer()->GetGUIDLow(), money);
 
+#ifdef ELUNA
     // used by eluna
     sEluna->OnMemberDepositMoney(pGuild, GetPlayer(), money);
+#endif
+
 
     pGuild->DisplayGuildBankTabsInfo(this);
     pGuild->DisplayGuildBankContent(this, 0);

@@ -53,7 +53,9 @@
 #include "GameObjectAI.h"
 #include "InstanceData.h"
 #include "MoveSplineInit.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS] =
 {
@@ -3681,9 +3683,10 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                     summon->SetMaxHealth(damage);
                     summon->SetHealth(damage);
                 }
-
+#ifdef ELUNA
                 if (Unit* summoner = m_caster->ToUnit())
                     sEluna->OnSummoned(summon, summoner);
+#endif
                 break;
             }
             break;
@@ -3756,9 +3759,10 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                             summon->AI()->EnterCombat(nullptr);
                         break;
                 }
-
+#ifdef ELUNA
                 if (Unit* summoner = m_originalCaster->ToUnit())
                     sEluna->OnSummoned(summon, summoner);
+#endif
             }
         }
         return;
@@ -6064,9 +6068,10 @@ void Spell::EffectDuel(SpellEffIndex effIndex)
 
     caster->SetUInt64Value(PLAYER_DUEL_ARBITER, pGameObj->GetGUID());
     target->SetUInt64Value(PLAYER_DUEL_ARBITER, pGameObj->GetGUID());
-
+#ifdef ELUNA
     // used by eluna
     sEluna->OnDuelRequest(target, caster);
+#endif
 }
 
 void Spell::EffectStuck(SpellEffIndex /*effIndex*/)
@@ -7435,8 +7440,10 @@ void Spell::SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* 
         summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
         summon->AI()->EnterEvadeMode();
 
+#ifdef ELUNA
         if (Unit* summoner = m_caster->ToUnit())
             sEluna->OnSummoned(summon, summoner);
+#endif
     }
 }
 

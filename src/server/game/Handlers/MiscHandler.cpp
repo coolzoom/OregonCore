@@ -41,7 +41,10 @@
 #include "CreatureAI.h"
 #include "GameObjectAI.h"
 #include "AccountMgr.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 #include "Item.h"
 
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
@@ -64,8 +67,11 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
         GetPlayer()->KillPlayer();
     }
 
+#ifdef ELUNA
     // used by eluna
     sEluna->OnRepop(GetPlayer());
+#endif
+
 
     //this is spirit release confirm?
     GetPlayer()->RemovePet(NULL, PET_SAVE_NOT_IN_SLOT, true);
@@ -122,9 +128,13 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
             DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - %u not found.", guid);
             return;
         }
+
+#ifdef ELUNA
 		// used by eluna
 		sEluna->HandleGossipSelectOption(GetPlayer(), item, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
 		return;
+#endif
+
     }
     else if (IS_PLAYER_GUID(guid))
     {
@@ -133,12 +143,18 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
             DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - %u not found.", guid);
             return;
         }
+
+#ifdef ELUNA
 		// used by eluna
 		sEluna->HandleGossipSelectOption(GetPlayer(), menuId, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
 		return;
+#endif
+
     }
     else
     {
+
+#ifdef ELUNA
         if (IS_ITEM_GUID(guid))
         {
             Item* item = GetPlayer()->GetItemByGuid(guid);
@@ -147,7 +163,6 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
                 DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - %u not found or you can't interact with it.", guid);
                 return;
             }
-
             // used by eluna
             sEluna->HandleGossipSelectOption(GetPlayer(), item, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
             return;
@@ -164,6 +179,7 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recv_data)
             sEluna->HandleGossipSelectOption(GetPlayer(), menuId, GetPlayer()->PlayerTalkClass->GossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GossipOptionAction(gossipListId), code);
             return;
         }
+#endif
 
         DEBUG_LOG("WORLD: HandleGossipSelectOptionOpcode - unsupported GUID type for highguid %u. lowpart %u.", uint32(GUID_HIPART(guid)), uint32(GUID_LOPART(guid)));
         return;

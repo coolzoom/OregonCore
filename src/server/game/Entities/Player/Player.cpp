@@ -64,7 +64,11 @@
 #include "ConditionMgr.h"
 #include "ScriptMgr.h"
 #include "PoolMgr.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 
 #include <cmath>
 
@@ -2584,8 +2588,12 @@ void Player::GiveXP(uint32 xp, Unit* victim, bool disableRafBonus)
 
     uint32 level = getLevel();
 
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnGiveXP(this, xp, victim);
+#endif
+
 
     sScriptMgr.OnGivePlayerXP(this, xp, victim);
 
@@ -2714,14 +2722,22 @@ void Player::GiveLevel(uint32 level, bool ignoreRAF)
         while (diff-- > 0)
             SetGrantableLevels(GetGrantableLevels() + sWorld.getRate(RATE_RAF_GRANTABLE_LEVELS_PER_LEVEL));
 
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnLevelChanged(this, oldLevel);
+#endif
+
 }
 
 void Player::SetFreeTalentPoints(uint32 points)
 {
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnFreeTalentPointsChanged(this, points);
+#endif
+
     SetUInt32Value(PLAYER_CHARACTER_POINTS1, points);
 }
 
@@ -2855,7 +2871,11 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
     // update free talent points
     SetFreeTalentPoints(CurTalentPoints - 1);
 
+
+#ifdef ELUNA
     sEluna->OnLearnTalents(this, talentId, talentRank, spellid);
+#endif
+
 }
 
 void Player::InitStatsForLevel(bool reapplyMods)
@@ -3786,8 +3806,12 @@ uint32 Player::ResetTalentsCost() const
 
 bool Player::ResetTalents(bool no_cost)
 {
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnTalentsReset(this, no_cost);
+#endif
+
 
     sScriptMgr.OnPlayerTalentsReset(this, no_cost);
 
@@ -4510,7 +4534,11 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 
     setDeathState(ALIVE);
 
+
+#ifdef ELUNA
     sEluna->OnResurrect(this);
+#endif
+
 
     // some items limited to specific map
     DestroyZoneLimitedItem(true, GetZoneId());
@@ -6661,8 +6689,12 @@ void Player::UpdateZone(uint32 newZone)
             Weather::SendFineWeatherUpdateToPlayer(this);
     }
 
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnUpdateZone(this, newZone, GetAreaId());
+#endif
+
 
     // in PvP, any not controlled zone (except zone->team == 6, default case)
     // in PvE, only opposition team capital
@@ -6780,8 +6812,12 @@ void Player::DuelComplete(DuelCompleteType type)
         SendMessageToSet(&data, true);
     }
 
-    // used by eluna
+ 
+#ifdef ELUNA
+   // used by eluna
     sEluna->OnDuelEnd(duel->opponent, this, type);
+#endif
+
 
     switch (type)
     {
@@ -10510,11 +10546,11 @@ uint8 Player::CanUseItem(Item* pItem, bool not_loading) const
 
             if (getLevel() < pProto->RequiredLevel)
                 return EQUIP_ERR_CANT_EQUIP_LEVEL_I;
-
+#ifdef ELUNA
             uint8 eres = sEluna->OnCanUseItem(this, pProto->ItemId);
             if (eres != EQUIP_ERR_OK)
                 return eres;
-
+#endif
             return EQUIP_ERR_OK;
         }
     }
@@ -10540,11 +10576,11 @@ bool Player::CanUseItem(ItemTemplate const* pProto)
             return false;
         if (getLevel() < pProto->RequiredLevel)
             return false;
-
+#ifdef ELUNA
         uint8 eres = sEluna->OnCanUseItem(this, pProto->ItemId);
         if (eres != EQUIP_ERR_OK)
             return false;
-
+#endif
         return true;
     }
     return false;
@@ -10874,14 +10910,23 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         ApplyEquipCooldown(pItem2);
 
+
+#ifdef ELUNA
         // used by eluna
         sEluna->OnEquip(this, pItem2, bag, slot);
+#endif
+
 
         return pItem2;
     }
 
-    // used by eluna
+ 
+#ifdef ELUNA
+   // used by eluna
     sEluna->OnEquip(this, pItem, bag, slot);
+#endif
+
+
 
     return pItem;
 }
@@ -11099,7 +11144,10 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
         ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
 
+
+#ifdef ELUNA
         sEluna->OnRemove(this, pItem);
+#endif
 
         if (bag == INVENTORY_SLOT_BAG_0)
         {
@@ -13522,6 +13570,8 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
     if (announce)
         SendQuestReward(pQuest, XP, questGiver);
 
+
+#ifdef ELUNA
     switch (questGiver->GetTypeId())
     {
     case TYPEID_UNIT:
@@ -13531,6 +13581,7 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
         sEluna->OnQuestReward(this, (GameObject*)questGiver, pQuest, reward);
         break;
     }
+#endif
 
     // cast spells after mark quest complete (some spells have quest completed state requirements in spell_area data)
     if (pQuest->GetRewSpellCast() > 0)
@@ -16306,8 +16357,11 @@ InstancePlayerBind* Player::BindToInstance(InstanceSave* save, bool permanent, b
             DEBUG_LOG("Player::BindToInstance: %s(%d) is now bound to map %d, instance %d, difficulty %d", GetName(), GetGUIDLow(), save->GetMapId(), save->GetInstanceId(), save->GetDifficulty());
         #endif
 
-        // used by eluna
+ 
+#ifdef ELUNA
+       // used by eluna
         sEluna->OnBindToInstance(this, save->GetDifficulty(), save->GetMapId(), permanent);
+#endif
 
         return &bind;
     }
@@ -16660,9 +16714,12 @@ void Player::SaveToDB()
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
     SetDisplayId(GetNativeDisplayId());
 
-    // Hack to check that this is not on create save
+ 
+#ifdef ELUNA
+   // Hack to check that this is not on create save
     if (!HasAtLoginFlag(AT_LOGIN_FIRST))
         sEluna->OnSave(this);
+#endif
 
     std::string sql_name = m_name;
     CharacterDatabase.escape_string(sql_name);
@@ -17499,8 +17556,13 @@ void Player::UpdateDuelFlag(time_t currTime)
     if (!duel || duel->startTimer == 0 || currTime < duel->startTimer + 3)
         return;
 
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnDuelStart(this, duel->opponent);
+#endif
+
+
 
     SetUInt32Value(PLAYER_DUEL_TEAM, 1);
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 2);
@@ -20989,8 +21051,13 @@ void Player::SetHomebindToLocation(WorldLocation const& loc, uint32 area_id)
 
 void Player::ModifyMoney(int32 d)
 {
-    // used by eluna
+ 
+#ifdef ELUNA
+   // used by eluna
     sEluna->OnMoneyChanged(this, d);
+#endif
+
+
 
     if (d < 0)
         SetMoney(GetMoney() > uint32(-d) ? GetMoney() + d : 0);

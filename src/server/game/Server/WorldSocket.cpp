@@ -41,7 +41,9 @@
 #include "WorldSocketMgr.h"
 #include "Log.h"
 #include "DBCStores.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 #if defined(__GNUC__)
 #pragma pack(1)
@@ -134,8 +136,10 @@ int WorldSocket::SendPacket (const WorldPacket& pct)
 
     if (closing_)
         return -1;
-
+		
+#ifdef ELUNA
     WorldPacket pkt = pct;
+#endif
 
     // Dump outgoing packet.
     if (sLog.IsLogTypeEnabled(LOG_TYPE_NETWORK))
@@ -157,8 +161,10 @@ int WorldSocket::SendPacket (const WorldPacket& pct)
         sLog.outNetwork("");
     }
 
+#ifdef ELUNA
     if (!sEluna->OnPacketSend(m_Session, pkt))
         return 0;
+#endif
 
     if (iSendPacket (pct) == -1)
     {
@@ -601,15 +607,19 @@ int WorldSocket::ProcessIncoming (WorldPacket* new_pct)
                 sLog.outError ("WorldSocket::ProcessIncoming: Player send CMSG_AUTH_SESSION again");
                 return -1;
             }
-
+			
+#ifdef ELUNA
             if (!sEluna->OnPacketReceive(m_Session, *new_pct))
                 return 0;
+#endif
 
             return HandleAuthSession (*new_pct);
         case CMSG_KEEP_ALIVE:
             DEBUG_LOG ("CMSG_KEEP_ALIVE ,size: %lu", new_pct->size());
 
+#ifdef ELUNA
             sEluna->OnPacketReceive(m_Session, *new_pct);
+#endif
             return 0;
         default:
             {

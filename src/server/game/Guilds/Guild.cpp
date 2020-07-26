@@ -25,7 +25,11 @@
 #include "SocialMgr.h"
 #include "Utilities/Util.h"
 #include "Language.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
 
 Guild::Guild()
 {
@@ -104,8 +108,12 @@ bool Guild::Create(Player* leader, std::string gname)
 
     CreateDefaultGuildRanks(lSession->GetSessionDbLocaleIndex());
 
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnCreate(this, leader, gname.c_str());
+
+#endif
 
     return AddMember(m_LeaderGuid, (uint32)GR_GUILDMASTER);
 }
@@ -240,8 +248,12 @@ bool Guild::AddMember(uint64 plGuid, uint32 plRank)
 
     UpdateAccountsNumber();
 
-    // used by eluna
+ 
+#ifdef ELUNA
+   // used by eluna
     sEluna->OnAddMember(this, pl, newmember.RankId);
+
+#endif
 
     return true;
 }
@@ -254,8 +266,12 @@ void Guild::SetMOTD(std::string motd)
     CharacterDatabase.escape_string(motd);
     CharacterDatabase.PExecute("UPDATE guild SET motd='%s' WHERE guildid='%u'", motd.c_str(), m_Id);
 
+#ifdef ELUNA
+
     // used by eluna
     sEluna->OnMOTDChanged(this, motd);
+#endif
+
 }
 
 void Guild::SetGINFO(std::string ginfo)
@@ -266,8 +282,12 @@ void Guild::SetGINFO(std::string ginfo)
     CharacterDatabase.escape_string(ginfo);
     CharacterDatabase.PExecute("UPDATE guild SET info='%s' WHERE guildid='%u'", ginfo.c_str(), m_Id);
 
+#ifdef ELUNA
+
     // used by eluna
     sEluna->OnInfoChanged(this, ginfo);
+#endif
+
 }
 
 bool Guild::LoadGuildFromDB(QueryResult_AutoPtr guildDataResult)
@@ -615,8 +635,12 @@ void Guild::DelMember(uint64 guid, bool isDisbanding)
 
     CharacterDatabase.PExecute("DELETE FROM guild_member WHERE guid = '%u'", GUID_LOPART(guid));
 
+#ifdef ELUNA
+
     // used by eluna
     sEluna->OnRemoveMember(this, player, isDisbanding); // IsKicked not a part of Mangos, implement?
+#endif
+
 }
 
 void Guild::ChangeRank(uint64 guid, uint32 newRank)
@@ -816,8 +840,12 @@ void Guild::Disband()
     CharacterDatabase.PExecute("DELETE FROM guild_eventlog WHERE guildid = '%u'", m_Id);
     CharacterDatabase.CommitTransaction();
 
-    // used by eluna
+ 
+#ifdef ELUNA
+   // used by eluna
     sEluna->OnDisband(this);
+
+#endif
 
     sObjectMgr.RemoveGuild(m_Id);
 }
@@ -1426,10 +1454,14 @@ bool Guild::MemberMoneyWithdraw(uint32 amount, uint32 LowGuid)
                                    itr->second.BankRemMoney, m_Id, LowGuid);
     }
 
+
+#ifdef ELUNA
     Player* player = sObjectMgr.GetPlayer(MAKE_NEW_GUID(LowGuid, 0, HIGHGUID_PLAYER));
 
     // used by eluna
     sEluna->OnMemberWitdrawMoney(this, player, amount, false); // IsRepair not a part of Mangos, implement?
+
+#endif
 
     return true;
 }
@@ -1773,8 +1805,12 @@ void Guild::LogBankEvent(uint8 LogEntry, uint8 TabId, uint32 PlayerGuidLow, uint
         m_GuildBankEventLog_Item[TabId].push_back(NewEvent);
     }
 
+
+#ifdef ELUNA
     // used by eluna
     sEluna->OnBankEvent(this, LogEntry, TabId, PlayerGuidLow, ItemOrMoney, ItemStackCount, DestTabId);
+
+#endif
 
     CharacterDatabase.PExecute("INSERT INTO guild_bank_eventlog (guildid,LogGuid,LogEntry,TabId,PlayerGuid,ItemOrMoney,ItemStackCount,DestTabId,TimeStamp) VALUES ('%u','%u','%u','%u','%u','%u','%u','%u','" UI64FMTD "')",
                                m_Id, NewEvent.LogGuid, uint32(NewEvent.LogEntry), uint32(TabId), NewEvent.PlayerGuid, NewEvent.ItemOrMoney, uint32(NewEvent.ItemStackCount), uint32(NewEvent.DestTabId), NewEvent.TimeStamp);

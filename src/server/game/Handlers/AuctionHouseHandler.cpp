@@ -27,7 +27,12 @@
 #include "Opcodes.h"
 #include "UpdateMask.h"
 #include "Utilities/Util.h"
+
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
+
+
 
 // please DO NOT use iterator++, because it is slower than ++iterator!!!
 // post-incrementation is always slower than pre-incrementation !
@@ -285,7 +290,11 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
 
     SendAuctionCommandResult(AH->Id, AUCTION_SELL_ITEM, AUCTION_OK);
 
+#ifdef ELUNA
     sEluna->OnAdd(auctionHouse, AH);
+#endif
+
+
 }
 
 // this function is called when client bids or buys out auction
@@ -478,7 +487,12 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
     auction->DeleteFromDB();
     uint32 item_template = auction->item_template;
     sAuctionMgr->RemoveAItem(auction->item_guidlow);
+
+#ifdef ELUNA
     sEluna->OnRemove(auctionHouse, auction);
+#endif
+
+
     auctionHouse->RemoveAuction(auction, item_template);
     CharacterDatabase.CommitTransaction();
 }

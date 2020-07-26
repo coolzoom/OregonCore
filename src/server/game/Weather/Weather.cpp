@@ -23,7 +23,9 @@
 #include "ObjectMgr.h"
 #include "Log.h"
 #include "Utilities/Util.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 // Create the Weather object
 Weather::Weather(uint32 zone, WeatherZoneChances const* weatherChances) : m_zone(zone), m_weatherChances(weatherChances)
@@ -258,8 +260,9 @@ bool Weather::UpdateWeather()
         break;
     }
     sLog.outDetail("Change the weather of zone %u to %s.", m_zone, wthstr);
-
+#ifdef ELUNA
     sEluna->OnChange(this, m_zone, state, m_grade);
+#endif
     return true;
 }
 
