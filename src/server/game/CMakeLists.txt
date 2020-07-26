@@ -35,6 +35,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/mersennetwister
   ${CMAKE_SOURCE_DIR}/dep/SFMT
   ${CMAKE_SOURCE_DIR}/dep/zlib
+  ${CMAKE_SOURCE_DIR}/dep/lualib
   ${CMAKE_SOURCE_DIR}/src/framework
   ${CMAKE_SOURCE_DIR}/src/common/Collision
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
@@ -124,6 +125,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Weather
   ${CMAKE_CURRENT_SOURCE_DIR}/World
   
+  ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine
   
   ${CMAKE_SOURCE_DIR}/src/server/scripts/PrecompiledHeaders
   ${ACE_INCLUDE_DIR}
@@ -133,9 +135,14 @@ include_directories(
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(game STATIC ${game_STAT_SRCS})
+add_library(game STATIC ${game_STAT_SRCS} ${lua_STAT_SRCS})
 
 add_dependencies(game revision.h)
+add_dependencies(game lualib)
+
+target_link_libraries(game
+ lualib
+)
 
 # Generate precompiled header
 if (USE_COREPCH)
@@ -147,3 +154,17 @@ if (USE_COREPCH)
     add_native_precompiled_header(game ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders/gamePCH)
   endif()
 endif()
+
+if( WIN32 )
+    add_custom_command(TARGET game
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/lua_scripts/extensions/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/extensions ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/lua_scripts/extensions/
+    )
+ endif()
+  
+ if( UNIX )
+    install(DIRECTORY extensions DESTINATION bin/lua_scripts/)
+ elseif( WIN32 )
+    install(DIRECTORY extensions DESTINATION "${CMAKE_INSTALL_PREFIX}/lua_scripts/")
+ endif()

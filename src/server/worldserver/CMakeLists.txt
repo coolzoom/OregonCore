@@ -29,6 +29,7 @@ endif()
 
 include_directories(
   ${CMAKE_BINARY_DIR}
+  ${CMAKE_SOURCE_DIR}/dep/lualib
   ${CMAKE_SOURCE_DIR}/dep/gsoap
   ${CMAKE_SOURCE_DIR}/dep/sockets/include
   ${CMAKE_SOURCE_DIR}/dep/SFMT
@@ -120,6 +121,8 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/game/Warden/Modules
   ${CMAKE_SOURCE_DIR}/src/server/game/Weather
   ${CMAKE_SOURCE_DIR}/src/server/game/World 
+ 
+  ${CMAKE_SOURCE_DIR}/src/server/game/LuaEngine 
  
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
   ${ACE_INCLUDE_DIR}
