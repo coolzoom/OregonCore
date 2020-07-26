@@ -39,7 +39,7 @@
 //#include "config.h"
 #include "ScriptedCreature.h"
 #include "Battleground.h"
-#include "Config/Config.h"
+#include "Configuration/Config.h"
 #include "BattlegroundMgr.h"
 #include "revision.h"
 
