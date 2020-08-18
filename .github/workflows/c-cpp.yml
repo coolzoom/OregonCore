@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: befor install
-      run: sudo apt-get -qq install mariadb-server libace-6.* libace-dev
+      run: sudo apt-get -qq install libmysql++-dev libace-dev
     - name: deps
       run: sudo apt-get -qq install cmake build-essential cppcheck git make binutils-dev libiberty-dev openssl libssl-dev
     - name: make 
