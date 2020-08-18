@@ -17,7 +17,8 @@ jobs:
           sudo apt-get -qq install libmysql++-dev libace-dev
           sudo apt-get -qq install cmake build-essential cppcheck git make binutils-dev libiberty-dev openssl libssl-dev
     - uses: actions/checkout@v2
-    - name: |
+    - name: Build & install
+      run: |
         mkdir build
         cd build
         cmake ../ -DCMAKE_C_COMPILER="gcc" -DCMAKE_CXX_COMPILER="g++" -DSERVERS=1 -DTOOLS=1 -DSCRIPTS=1 -DWITH_DOCS=1 -DWITH_WARNINGS=0 -DELUNA=0 -DWITH_COREDEBUG=0
