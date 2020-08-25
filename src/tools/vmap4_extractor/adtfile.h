@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef ADT_H
@@ -33,7 +22,7 @@ typedef struct
     float x;
     float y;
     float z;
-} svec;
+}svec;
 
 struct vec
 {
@@ -49,9 +38,9 @@ struct triangle
 
 typedef struct
 {
-    float v9[16 * 8 + 1][16 * 8 + 1];
-    float v8[16 * 8][16 * 8];
-} Cell;
+    float v9[16*8+1][16*8+1];
+    float v8[16*8][16*8];
+}Cell;
 
 typedef struct
 {
@@ -61,12 +50,12 @@ typedef struct
     //Liquid *lq;
     float waterlevel[9][9];
     uint8 flag;
-} chunk;
+}chunk;
 
 typedef struct
 {
     chunk ch[16][16];
-} mcell;
+}mcell;
 
 struct MapChunkHeader
 {
@@ -108,34 +97,34 @@ struct MapChunkHeader
 
 class ADTFile
 {
-    public:
-        ADTFile(char* filename);
-        ~ADTFile();
-        int nWMO;
-        int nMDX;
-        string* WmoInstansName;
-        string* ModelInstansName;
-        bool init(uint32 map_num, uint32 tileX, uint32 tileY, StringSet& failedPaths);
-        //void LoadMapChunks();
+private:
+    //size_t mcnk_offsets[256], mcnk_sizes[256];
+    MPQFile ADT;
+    //mcell Mcell;
+    string Adtfilename;
+public:
+    ADTFile(char* filename);
+    ~ADTFile();
+    int nWMO;
+    int nMDX;
+    string* WmoInstansName;
+    string* ModelInstansName;
+    bool init(uint32 map_num, uint32 tileX, uint32 tileY);
+    //void LoadMapChunks();
 
-        //uint32 wmo_count;
-        /*
-            const mcell& Getmcell() const
-            {
-                return Mcell;
-            }
-        */
-    private:
-        //size_t mcnk_offsets[256], mcnk_sizes[256];
-        MPQFile ADT;
-        //mcell Mcell;
-        string Adtfilename;
+    //uint32 wmo_count;
+/*
+    const mcell& Getmcell() const
+    {
+        return Mcell;
+    }
+*/
 };
 
 const char * GetPlainName(const char * FileName);
 char * GetPlainName(char * FileName);
-char const* GetExtension(char const* FileName);
-void fixnamen(char* name, size_t len);
+char * GetExtension(char * FileName);
+void fixnamen(char *name, size_t len);
 void fixname2(char *name, size_t len);
 //void fixMapNamen(char *name, size_t len);
 

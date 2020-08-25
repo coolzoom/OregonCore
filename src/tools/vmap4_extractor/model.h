@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef MODEL_H
@@ -20,34 +9,16 @@
 
 #include "loadlib/loadlib.h"
 #include "vec3d.h"
-//#include "mpq.h"
 #include "modelheaders.h"
 #include <vector>
-#include "vmapexport.h"
 
-class WMOInstance;
 class MPQFile;
 
 Vec3D fixCoordSystem(Vec3D v);
 
 class Model
 {
-    public:
-        ModelHeader header;
-        ModelBoundingVertex* boundingVertices;
-        Vec3D* vertices;
-        uint16* indices;
-        size_t nIndices;
-
-        bool open(StringSet& failedPaths);
-    bool ConvertToVMAPModel(const char * outfilename);
-
-        bool ok;
-
-        Model(std::string& filename);
-    ~Model() {_unload();}
-
-    private:
+private:
     void _unload()
     {
         delete[] vertices;
@@ -55,22 +26,29 @@ class Model
         vertices = NULL;
         indices = NULL;
     }
-        std::string filename;
-        char outfilename;
+    std::string filename;
+public:
+    ModelHeader header;
+    Vec3D* vertices;
+    uint16* indices;
+
+    bool open();
+    bool ConvertToVMAPModel(char const* outfilename);
+
+    Model(std::string& filename);
+    ~Model() { _unload(); }
 };
 
 class ModelInstance
 {
-    public:
-        Model* model;
+public:
+    uint32 id;
+    Vec3D pos, rot;
+    uint16 scale, flags;
+    float sc;
 
-        uint32 id;
-        uint16 scale;
-        Vec3D pos, rot;
-        float sc;
-
-        ModelInstance() {}
-        ModelInstance(MPQFile& f, const char* ModelInstName, uint32 mapID, uint32 tileX, uint32 tileY, FILE* pDirfile);
+    ModelInstance() : id(0), scale(0), flags(0), sc(0.0f) {}
+    ModelInstance(MPQFile& f, char const* ModelInstName, uint32 mapID, uint32 tileX, uint32 tileY, FILE* pDirfile);
 
 };
 

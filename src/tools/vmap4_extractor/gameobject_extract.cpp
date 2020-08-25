@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
+ */
+
 #include "model.h"
 #include "dbcfile.h"
 #include "adtfile.h"
@@ -6,31 +12,30 @@
 #include <algorithm>
 #include <stdio.h>
 
-bool ExtractSingleModel(std::string& origPath, std::string& fixedName, StringSet& failedPaths)
+bool ExtractSingleModel(std::string& fname)
 {
-    char const* ext = GetExtension(GetPlainName(origPath.c_str()));
+    char * name = GetPlainName((char*)fname.c_str());
+    char * ext = GetExtension(name);
 
     // < 3.1.0 ADT MMDX section store filename.mdx filenames for corresponded .m2 file
     if (!strcmp(ext, ".mdx"))
     {
         // replace .mdx -> .m2
-        origPath.erase(origPath.length() - 2, 2);
-        origPath.append("2");
+        fname.erase(fname.length()-2,2);
+        fname.append("2");
     }
     // >= 3.1.0 ADT MMDX section store filename.m2 filenames for corresponded .m2 file
     // nothing do
 
-    fixedName = GetPlainName(origPath.c_str());
-
-    std::string output(szWorkDirWmo);                       // Stores output filename (possible changed)
+    std::string output(szWorkDirWmo);
     output += "/";
-    output += fixedName;
+    output += name;
 
     if (FileExists(output.c_str()))
         return true;
 
-    Model mdl(origPath);                                    // Possible changed fname
-    if (!mdl.open(failedPaths))
+    Model mdl(fname);
+    if (!mdl.open())
         return false;
 
     return mdl.ConvertToVMAPModel(output.c_str());
@@ -38,8 +43,7 @@ bool ExtractSingleModel(std::string& origPath, std::string& fixedName, StringSet
 
 void ExtractGameobjectModels()
 {
-    printf("\n");
-    printf("Extracting GameObject models...\n");
+    printf("Extracting GameObject models...");
     DBCFile dbc("DBFilesClient\\GameObjectDisplayInfo.dbc");
     if(!dbc.open())
     {
@@ -50,9 +54,14 @@ void ExtractGameobjectModels()
     std::string basepath = szWorkDirWmo;
     basepath += "/";
     std::string path;
-    StringSet failedPaths;
 
-    FILE* model_list = fopen((basepath + "temp_gameobject_models").c_str(), "wb");
+    std::string modelListPath = basepath + "temp_gameobject_models";
+    FILE* model_list = fopen(modelListPath.c_str(), "wb");
+    if (!model_list)
+    {
+        printf("Fatal error: Could not open file %s\n", modelListPath.c_str());
+        return;
+    }
 
     for (DBCFile::Iterator it = dbc.begin(); it != dbc.end(); ++it)
     {
@@ -65,11 +74,11 @@ void ExtractGameobjectModels()
         char * name = GetPlainName((char*)path.c_str());
         fixname2(name, strlen(name));
 
-        char const* ch_ext = GetExtension(name);
+        char * ch_ext = GetExtension(name);
         if (!ch_ext)
             continue;
 
-        //strToLower(ch_ext);
+        strToLower(ch_ext);
 
         bool result = false;
         if (!strcmp(ch_ext, ".wmo"))
@@ -78,13 +87,12 @@ void ExtractGameobjectModels()
         }
         else if (!strcmp(ch_ext, ".mdl"))
         {
-            // @todo: extract .mdl files, if needed
+            // TODO: extract .mdl files, if needed
             continue;
         }
         else //if (!strcmp(ch_ext, ".mdx") || !strcmp(ch_ext, ".m2"))
         {
-            std::string fixedName;
-            result = ExtractSingleModel(path, fixedName, failedPaths);
+            result = ExtractSingleModel(path);
         }
 
         if (result)
@@ -98,14 +106,6 @@ void ExtractGameobjectModels()
     }
 
     fclose(model_list);
-
-    if (!failedPaths.empty())
-    {
-        printf("Warning: Some models could not be extracted, see below\n");
-        for (StringSet::const_iterator itr = failedPaths.begin(); itr != failedPaths.end(); ++itr)
-            printf("Could not find file of model %s\n", itr->c_str());
-        printf("A few of these warnings are expected to happen, so be not alarmed!\n");
-    }
 
     printf("Done!\n");
 }

@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef MODELHEADERS_H
@@ -40,8 +29,6 @@ struct ModelHeader
     uint32 ofsAnimations;
     uint32 nAnimationLookup;
     uint32 ofsAnimationLookup;
-    uint32 nD;
-    uint32 ofsD;
     uint32 nBones;
     uint32 ofsBones;
     uint32 nKeyBoneLookup;
@@ -49,15 +36,12 @@ struct ModelHeader
     uint32 nVertices;
     uint32 ofsVertices;
     uint32 nViews;
-    uint32 ofsViews;
     uint32 nColors;
     uint32 ofsColors;
     uint32 nTextures;
     uint32 ofsTextures;
     uint32 nTransparency;
     uint32 ofsTransparency;
-    uint32 nI;
-    uint32 ofsI;
     uint32 nTextureanimations;
     uint32 ofsTextureanimations;
     uint32 nTexReplace;
@@ -97,12 +81,6 @@ struct ModelHeader
     uint32 ofsRibbonEmitters;
     uint32 nParticleEmitters;
     uint32 ofsParticleEmitters;
-
-};
-
-struct ModelBoundingVertex
-{
-    Vec3D pos;
 };
 
 #pragma pack(pop)
