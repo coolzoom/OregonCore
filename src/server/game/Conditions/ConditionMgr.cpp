@@ -1652,7 +1652,7 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond)
         case CONDITION_WORLD_STATE:
         {
             /* @todo Implement this feature
-            if (!sWorld->getWorldState(cond->ConditionValue1))
+            if (!sWorld.getWorldState(cond->ConditionValue1))
             {
                 sLog.outErrorDb("World state condition has non existing world state in value1 (%u), skipped", cond->ConditionValue1);
                 return false;

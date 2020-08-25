@@ -1,11 +1,14 @@
 Generator command line args
 
+--threads           [#]             Max number of threads used by the generator
+                                    Default: 3
+
 --offMeshInput      [file.*]        Path to file containing off mesh connections data.
                                     Format must be: (see offmesh_example.txt)
                                     "map_id tile_x,tile_y (start_x start_y start_z) (end_x end_y end_z) size  //optional comments"
                                     Single mesh connection per line.
 
---silent                            Make us script friendly. Do not wait for user input
+--silent            []              Make us script friendly. Do not wait for user input
                                     on error or completion.
 
 --bigBaseUnit       [true|false]    Generate tile/map using bigger basic unit.
@@ -17,7 +20,7 @@ Generator command line args
 
                                     float between 45 and 90 degrees (default 60)
 
---skipLiquid                        liquid data for maps
+--skipLiquid        [true|false]    extract liquid data for maps
 
                                     false: include liquid data (default)
 
@@ -36,7 +39,7 @@ Generator command line args
                                     false: skip battlegrounds (default)
 
 --debugOutput       [true|false]    create debugging files for use with RecastDemo
-                                    if you are only creating mmaps for use with MaNGOS,
+                                    if you are only creating mmaps for use with Moongose,
                                     you don't want debugging files
 
                                     false: don't create debugging files (default)
@@ -53,14 +56,14 @@ Generator command line args
 
 examples:
 
-movements_extractor
+movement_extractor
 builds maps using the default settings (see above for defaults)
 
-movements_extractor --skipContinents true
+movement_extractor --skipContinents true
 builds the default maps, except continents
 
-movements_extractor 0
+movement_extractor 0
 builds all tiles of map 0
 
-movements_extractor 0 --tile 34,46
+movement_extractor 0 --tile 34,46
 builds only tile 34,46 of map 0 (this is the southern face of blackrock mountain)

@@ -13,8 +13,8 @@ set(sources
     IntermediateValues.h
     MapBuilder.cpp
     MapBuilder.h
-    MMapCommon.h
-    generator.cpp
+    PathCommon.h
+    PathGenerator.cpp
     TerrainBuilder.cpp
     TerrainBuilder.h
     VMapExtensions.cpp

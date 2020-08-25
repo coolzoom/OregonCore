@@ -1,50 +1,27 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
-#include "MMapCommon.h"
+#include "PathCommon.h"
 #include "MapBuilder.h"
 #include "Timer.h"
 
 using namespace MMAP;
 
-
-// Used for creating MMaps folder
-char output_path[128] = ".";
-void CreateDir(const std::string& Path)
-{
-    #ifdef WIN32
-    _mkdir( Path.c_str());
-    #else
-    mkdir( Path.c_str(), 0777 );
-    #endif
-}
-
 bool checkDirectories(bool debugOutput)
 {
-    vector<string> dirFiles;
+    std::vector<std::string> dirFiles;
 
-    if (getDirContents(dirFiles, "maps") == LISTFILE_DIRECTORY_NOT_FOUND || !dirFiles.size())
+    if (getDirContents(dirFiles, "maps") == LISTFILE_DIRECTORY_NOT_FOUND || dirFiles.empty())
     {
         printf("'maps' directory is empty or does not exist\n");
         return false;
     }
 
     dirFiles.clear();
-    if (getDirContents(dirFiles, "vmaps", "*.vmtree") == LISTFILE_DIRECTORY_NOT_FOUND || !dirFiles.size())
+    if (getDirContents(dirFiles, "vmaps", "*.vmtree") == LISTFILE_DIRECTORY_NOT_FOUND || dirFiles.empty())
     {
         printf("'vmaps' directory is empty or does not exist\n");
         return false;
@@ -53,9 +30,8 @@ bool checkDirectories(bool debugOutput)
     dirFiles.clear();
     if (getDirContents(dirFiles, "mmaps") == LISTFILE_DIRECTORY_NOT_FOUND)
     {
-        std::string path = output_path;
-        path += "/mmaps/";
-        CreateDir(path);
+        printf("'mmaps' directory does not exist\n");
+        return false;
     }
 
     dirFiles.clear();
@@ -72,19 +48,20 @@ bool checkDirectories(bool debugOutput)
 }
 
 bool handleArgs(int argc, char** argv,
-                int& mapnum,
-                int& tileX,
-                int& tileY,
-                int& threads,
-                float& maxAngle,
-                bool& skipLiquid,
-                bool& skipContinents,
-                bool& skipJunkMaps,
-                bool& skipBattlegrounds,
-                bool& debugOutput,
-                bool& silent,
-                bool& bigBaseUnit,
-                char*& offMeshInputPath)
+               int &mapnum,
+               int &tileX,
+               int &tileY,
+               float &maxAngle,
+               bool &skipLiquid,
+               bool &skipContinents,
+               bool &skipJunkMaps,
+               bool &skipBattlegrounds,
+               bool &debugOutput,
+               bool &silent,
+               bool &bigBaseUnit,
+               char* &offMeshInputPath,
+               char* &file,
+               int& threads)
 {
     char* param = NULL;
     for (int i = 1; i < argc; ++i)
@@ -100,6 +77,21 @@ bool handleArgs(int argc, char** argv,
                 maxAngle = maxangle;
             else
                 printf("invalid option for '--maxAngle', using default\n");
+        }
+        else if (strcmp(argv[i], "--threads") == 0)
+        {
+            param = argv[++i];
+            if (!param)
+                return false;
+            threads = atoi(param);
+            printf("Using %i threads to extract mmaps\n", threads);
+        }
+        else if (strcmp(argv[i], "--file") == 0)
+        {
+            param = argv[++i];
+            if (!param)
+                return false;
+            file = param;
         }
         else if (strcmp(argv[i], "--tile") == 0)
         {
@@ -189,7 +181,9 @@ bool handleArgs(int argc, char** argv,
                 printf("invalid option for '--debugOutput', using default true\n");
         }
         else if (strcmp(argv[i], "--silent") == 0)
+        {
             silent = true;
+        }
         else if (strcmp(argv[i], "--bigBaseUnit") == 0)
         {
             param = argv[++i];
@@ -211,18 +205,6 @@ bool handleArgs(int argc, char** argv,
 
             offMeshInputPath = param;
         }
-        else if (strcmp(argv[i], "--threads") == 0)
-        {
-            param = argv[++i];
-            if (!param)
-                return false;
-            threads = atoi(param);
-
-            // Default to one thread, not sure if needed with previous check
-            if (threads <= 0)
-                threads = 1;
-            printf("Using %i threads to extract mmaps\n", threads);
-        }
         else
         {
             int map = atoi(argv[i]);
@@ -242,15 +224,14 @@ bool handleArgs(int argc, char** argv,
 int finish(const char* message, int returnValue)
 {
     printf("%s", message);
-    getchar();
+    getchar(); // Wait for user input
     return returnValue;
 }
 
 int main(int argc, char** argv)
 {
-    int mapnum = -1;
-    int threads = 1;
-    float maxAngle = 60.0f;
+    int threads = 3, mapnum = -1;
+    float maxAngle = 70.0f;
     int tileX = -1, tileY = -1;
     bool skipLiquid = false,
          skipContinents = false,
@@ -260,11 +241,12 @@ int main(int argc, char** argv)
          silent = false,
          bigBaseUnit = false;
     char* offMeshInputPath = NULL;
+    char* file = NULL;
 
     bool validParam = handleArgs(argc, argv, mapnum,
-                                 tileX, tileY, threads, maxAngle,
+                                 tileX, tileY, maxAngle,
                                  skipLiquid, skipContinents, skipJunkMaps, skipBattlegrounds,
-                                 debugOutput, silent, bigBaseUnit, offMeshInputPath);
+                                 debugOutput, silent, bigBaseUnit, offMeshInputPath, file, threads);
 
     if (!validParam)
         return silent ? -1 : finish("You have specified invalid parameters", -1);
@@ -282,14 +264,15 @@ int main(int argc, char** argv)
     }
 
     if (!checkDirectories(debugOutput))
-        return silent ? -3 : finish("Press any key to close...", -3);
+        return silent ? -3 : finish("Press ENTER to close...", -3);
 
     MapBuilder builder(maxAngle, skipLiquid, skipContinents, skipJunkMaps,
                        skipBattlegrounds, debugOutput, bigBaseUnit, offMeshInputPath);
 
     uint32 start = getMSTime();
-
-    if (tileX > -1 && tileY > -1 && mapnum >= 0)
+    if (file)
+        builder.buildMeshFromFile(file);
+    else if (tileX > -1 && tileY > -1 && mapnum >= 0)
         builder.buildSingleTile(mapnum, tileX, tileY);
     else if (mapnum >= 0)
         builder.buildMap(uint32(mapnum));

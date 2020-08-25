@@ -1,53 +1,41 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef _INTERMEDIATE_VALUES_H
 #define _INTERMEDIATE_VALUES_H
 
-#include "MMapCommon.h"
+#include "PathCommon.h"
 #include "TerrainBuilder.h"
-
 #include "Recast.h"
 #include "DetourNavMesh.h"
 
 namespace MMAP
 {
-// this class gathers all debug info holding and output
-struct IntermediateValues
-{
-    rcCompactHeightfield* compactHeightfield;
-    rcHeightfield* heightfield;
-    rcContourSet* contours;
-    rcPolyMesh* polyMesh;
-    rcPolyMeshDetail* polyMeshDetail;
+    // this class gathers all debug info holding and output
+    struct IntermediateValues
+    {
+        rcHeightfield* heightfield;
+        rcCompactHeightfield* compactHeightfield;
+        rcContourSet* contours;
+        rcPolyMesh* polyMesh;
+        rcPolyMeshDetail* polyMeshDetail;
 
-    IntermediateValues() :  compactHeightfield(NULL), heightfield(NULL),
-        contours(NULL), polyMesh(NULL), polyMeshDetail(NULL) {}
-    ~IntermediateValues();
+        IntermediateValues() :  heightfield(NULL), compactHeightfield(NULL),
+                                contours(NULL), polyMesh(NULL), polyMeshDetail(NULL) {}
+        ~IntermediateValues();
 
-    void writeIV(uint32 mapID, uint32 tileX, uint32 tileY);
+        void writeIV(uint32 mapID, uint32 tileX, uint32 tileY);
 
-    void debugWrite(FILE* file, const rcHeightfield* mesh);
-    void debugWrite(FILE* file, const rcCompactHeightfield* chf);
-    void debugWrite(FILE* file, const rcContourSet* cs);
-    void debugWrite(FILE* file, const rcPolyMesh* mesh);
-    void debugWrite(FILE* file, const rcPolyMeshDetail* mesh);
+        void debugWrite(FILE* file, const rcHeightfield* mesh);
+        void debugWrite(FILE* file, const rcCompactHeightfield* chf);
+        void debugWrite(FILE* file, const rcContourSet* cs);
+        void debugWrite(FILE* file, const rcPolyMesh* mesh);
+        void debugWrite(FILE* file, const rcPolyMeshDetail* mesh);
 
-    void generateObjFile(uint32 mapID, uint32 tileX, uint32 tileY, MeshData& meshData);
-};
+        void generateObjFile(uint32 mapID, uint32 tileX, uint32 tileY, MeshData &meshData);
+    };
 }
 #endif

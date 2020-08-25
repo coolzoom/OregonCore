@@ -300,7 +300,7 @@ public:
         handler->PSendSysMessage(LANG_CONNECTED_USERS, activeClientsNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);
         handler->PSendSysMessage(LANG_UPTIME, str.c_str());
         handler->PSendSysMessage(LANG_UPDATE_DIFF, updateTime);
-        //! Can't use sWorld->ShutdownMsg here in case of console command
+        //! Can't use sWorld.ShutdownMsg here in case of console command
         if (sWorld.IsShuttingDown())
             handler->PSendSysMessage(LANG_SHUTDOWN_TIMELEFT, secsToTimeString(sWorld.GetShutDownTimeLeft()).c_str());
 
