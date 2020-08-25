@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: http://github.com/azerothcore/azerothcore-wotlk/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #include "mpq_libmpq04.h"
@@ -29,22 +18,22 @@ MPQArchive::MPQArchive(const char* filename)
         switch(result) {
             case LIBMPQ_ERROR_OPEN :
                 printf("Error opening archive '%s': Does file really exist?\n", filename);
-            break;
+                break;
             case LIBMPQ_ERROR_FORMAT :            /* bad file format */
-            printf("Error opening archive '%s': Bad file format\n", filename);
-            break;
+                printf("Error opening archive '%s': Bad file format\n", filename);
+                break;
             case LIBMPQ_ERROR_SEEK :         /* seeking in file failed */
                 printf("Error opening archive '%s': Seeking in file failed\n", filename);
-            break;
+                break;
             case LIBMPQ_ERROR_READ :              /* Read error in archive */
-            printf("Error opening archive '%s': Read error in archive\n", filename);
-            break;
+                printf("Error opening archive '%s': Read error in archive\n", filename);
+                break;
             case LIBMPQ_ERROR_MALLOC :               /* maybe not enough memory? :) */
-            printf("Error opening archive '%s': Maybe not enough memory\n", filename);
-            break;
-        default:
-            printf("Error opening archive '%s': Unknown error\n", filename);
-            break;
+                printf("Error opening archive '%s': Maybe not enough memory\n", filename);
+                break;
+            default:
+                printf("Error opening archive '%s': Unknown error\n", filename);
+                break;
         }
         return;
     }
@@ -63,7 +52,7 @@ MPQFile::MPQFile(const char* filename):
     pointer(0),
     size(0)
 {
-    for (ArchiveSet::iterator i = gOpenArchives.begin(); i != gOpenArchives.end(); ++i)
+    for(ArchiveSet::iterator i=gOpenArchives.begin(); i!=gOpenArchives.end();++i)
     {
         mpq_archive *mpq_a = (*i)->mpq_a;
 
