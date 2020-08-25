@@ -1,5 +1,5 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -23,7 +23,6 @@
 #include "Platform/Define.h"
 #include <ace/Thread_Mutex.h>
 #include <vector>
-
 //===========================================================
 
 #define MAP_FILENAME_EXTENSION2 ".vmtree"
@@ -47,83 +46,79 @@ namespace G3D
 
 namespace VMAP
 {
-class StaticMapTree;
-class WorldModel;
+    class StaticMapTree;
+    class WorldModel;
 
-class ManagedModel
-{
-    public:
-        ManagedModel(): iModel(0), iRefCount(0) {}
+    class ManagedModel
+    {
+        public:
+            ManagedModel() : iModel(0), iRefCount(0) { }
             void setModel(WorldModel* model) { iModel = model; }
             WorldModel* getModel() { return iModel; }
             void incRefCount() { ++iRefCount; }
             int decRefCount() { return --iRefCount; }
-    protected:
-        WorldModel* iModel;
-        int iRefCount;
-};
+        protected:
+            WorldModel* iModel;
+            int iRefCount;
+    };
 
-typedef UNORDERED_MAP<uint32 , StaticMapTree*> InstanceTreeMap;
-typedef UNORDERED_MAP<std::string, ManagedModel> ModelFileMap;
+    typedef UNORDERED_MAP<uint32, StaticMapTree*> InstanceTreeMap;
+    typedef UNORDERED_MAP<std::string, ManagedModel> ModelFileMap;
 
-class VMapManager2 : public IVMapManager
-{
-    protected:
-        // Tree to check collision
-        ModelFileMap iLoadedModelFiles;
-        InstanceTreeMap iInstanceMapTrees;
-        bool thread_safe_environment;
-        // Mutex for iLoadedModelFiles
-        ACE_Thread_Mutex LoadedModelFilesLock;
+    class VMapManager2 : public IVMapManager
+    {
+        protected:
+            // Tree to check collision
+            ModelFileMap iLoadedModelFiles;
+            InstanceTreeMap iInstanceMapTrees;
+            // Mutex for iLoadedModelFiles
+            ACE_Thread_Mutex LoadedModelFilesLock;
 
-        bool _loadMap(uint32 mapId, const std::string& basePath, uint32 tileX, uint32 tileY);
-        /* void _unloadMap(uint32 pMapId, uint32 x, uint32 y); */
+            bool _loadMap(uint32 mapId, const std::string& basePath, uint32 tileX, uint32 tileY);
+            /* void _unloadMap(uint32 pMapId, uint32 x, uint32 y); */
 
-        InstanceTreeMap::const_iterator GetMapTree(uint32 mapId) const;
+            static uint32 GetLiquidFlagsDummy(uint32) { return 0; }
 
-    public:
-        // public for debug
-        G3D::Vector3 convertPositionToInternalRep(float x, float y, float z) const;
+        public:
+            // public for debug
+            G3D::Vector3 convertPositionToInternalRep(float x, float y, float z) const;
             static std::string getMapFileName(unsigned int mapId);
 
-        VMapManager2();
-        ~VMapManager2(void);
+            VMapManager2();
+            ~VMapManager2(void);
 
-        VMAPLoadResult loadMap(const char* pBasePath, unsigned int mapId, int x, int y);
+            int loadMap(const char* pBasePath, unsigned int mapId, int x, int y);
 
-        void InitializeThreadUnsafe(const std::vector<uint32>& mapIds);
-        void unloadMap(unsigned int mapId, int x, int y);
-        void unloadMap(unsigned int mapId);
+            void unloadMap(unsigned int mapId, int x, int y);
+            void unloadMap(unsigned int mapId);
 
-        bool isInLineOfSight(unsigned int mapId, float x1, float y1, float z1, float x2, float y2, float z2) ;
-        /**
-        fill the hit pos and return true, if an object was hit
-        */
-        bool getObjectHitPos(unsigned int mapId, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz, float modifyDist);
-        float getHeight(unsigned int mapId, float x, float y, float z, float maxSearchDist);
+            bool isInLineOfSight(unsigned int mapId, float x1, float y1, float z1, float x2, float y2, float z2) ;
+            /**
+            fill the hit pos and return true, if an object was hit
+            */
+            bool getObjectHitPos(unsigned int mapId, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz, float modifyDist);
+            float getHeight(unsigned int mapId, float x, float y, float z, float maxSearchDist);
 
-        bool processCommand(char* /*command*/) { return false; } // for debug and extensions
+            bool processCommand(char* /*command*/) { return false; } // for debug and extensions
 
-        bool getAreaInfo(unsigned int pMapId, float x, float y, float& z, uint32& flags, int32& adtId, int32& rootId, int32& groupId) const;
-        bool GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 reqLiquidType, float& level, float& floor, uint32& type) const;
+            bool getAreaInfo(unsigned int pMapId, float x, float y, float& z, uint32& flags, int32& adtId, int32& rootId, int32& groupId) const;
+            bool GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 reqLiquidType, float& level, float& floor, uint32& type) const;
 
-        WorldModel* acquireModelInstance(const std::string& basepath, const std::string& filename);
-        void releaseModelInstance(const std::string& filename);
+            WorldModel* acquireModelInstance(const std::string& basepath, const std::string& filename);
+            void releaseModelInstance(const std::string& filename);
 
-        virtual std::string getDirFileName(unsigned int mapId, int /*x*/, int /*y*/) const
-        {
-            return getMapFileName(mapId);
-        }
+            // what's the use of this? o.O
+            virtual std::string getDirFileName(unsigned int mapId, int /*x*/, int /*y*/) const
+            {
+                return getMapFileName(mapId);
+            }
+            virtual bool existsMap(const char* basePath, unsigned int mapId, int x, int y);
+        public:
+            void getInstanceMapTree(InstanceTreeMap &instanceMapTree);
 
-        virtual bool existsMap(const char* basePath, unsigned int mapId, int x, int y);
-
-        uint32(*GetLiquidFlagsPtr)(uint32 liquidType);
-
-        #ifdef MMAP_GENERATOR
-    public:
-        void getInstanceMapTree(InstanceTreeMap& instanceMapTree);
-        #endif
-};
+            typedef uint32(*GetLiquidFlagsFn)(uint32 liquidType);
+            GetLiquidFlagsFn GetLiquidFlagsPtr;
+    };
 }
 
 #endif

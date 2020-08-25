@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef _BIH_H
@@ -31,16 +20,6 @@
 #include <cmath>
 
 #define MAX_STACK_SIZE 64
-
-#ifdef _MSC_VER
-    #define isnan(x) _isnan(x)
-#else
-    #define isnan(x) (std::isnan(x))
-#endif
-
-using G3D::Vector3;
-using G3D::AABox;
-using G3D::Ray;
 
 static inline uint32 floatToRawIntBits(float f)
 {
@@ -66,7 +45,7 @@ static inline float intBitsToFloat(uint32 i)
 
 struct AABound
 {
-    Vector3 lo, hi;
+    G3D::Vector3 lo, hi;
 };
 
 /** Bounding Interval Hierarchy Class.
@@ -84,7 +63,7 @@ class BIH
             tree.clear();
             objects.clear();
             // create space for the first node
-            tree.push_back(3 << 30); // dummy leaf
+            tree.push_back(3u << 30u); // dummy leaf
             tree.insert(tree.end(), 2, 0);
         }
     public:
@@ -102,12 +81,11 @@ class BIH
             dat.maxPrims = leafSize;
             dat.numPrims = primitives.size();
             dat.indices = new uint32[dat.numPrims];
-            dat.primBound = new AABox[dat.numPrims];
+            dat.primBound = new G3D::AABox[dat.numPrims];
             getBounds(primitives[0], bounds);
             for (uint32 i=0; i<dat.numPrims; ++i)
             {
                 dat.indices[i] = i;
-                AABox tb;
                 getBounds(primitives[i], dat.primBound[i]);
                 bounds.merge(dat.primBound[i]);
             }
@@ -125,16 +103,16 @@ class BIH
             delete[] dat.primBound;
             delete[] dat.indices;
         }
-        uint32 primCount() { return objects.size(); }
+        uint32 primCount() const { return objects.size(); }
 
         template<typename RayCallback>
-        void intersectRay(const Ray &r, RayCallback& intersectCallback, float &maxDist, bool stopAtFirst=false) const
+        void intersectRay(const G3D::Ray &r, RayCallback& intersectCallback, float &maxDist, bool stopAtFirstHit) const
         {
             float intervalMin = -1.f;
             float intervalMax = -1.f;
-            Vector3 org = r.origin();
-            Vector3 dir = r.direction();
-            Vector3 invDir;
+            G3D::Vector3 org = r.origin();
+            G3D::Vector3 dir = r.direction();
+            G3D::Vector3 invDir;
             for (int i=0; i<3; ++i)
             {
                 invDir[i] = 1.f / dir[i];
@@ -227,8 +205,8 @@ class BIH
                             // leaf - test some objects
                             int n = tree[node + 1];
                             while (n > 0) {
-                                bool hit = intersectCallback(r, objects[offset], maxDist, stopAtFirst);
-                                if (stopAtFirst && hit) return;
+                                bool hit = intersectCallback(r, objects[offset], maxDist, stopAtFirstHit);
+                                if (stopAtFirstHit && hit) return;
                                 --n;
                                 ++offset;
                             }
@@ -267,7 +245,7 @@ class BIH
         }
 
         template<typename IsectCallback>
-        void intersectPoint(const Vector3 &p, IsectCallback& intersectCallback) const
+        void intersectPoint(const G3D::Vector3 &p, IsectCallback& intersectCallback) const
         {
             if (!bounds.contains(p))
                 return;
@@ -350,12 +328,12 @@ class BIH
     protected:
         std::vector<uint32> tree;
         std::vector<uint32> objects;
-        AABox bounds;
+        G3D::AABox bounds;
 
         struct buildData
         {
             uint32 *indices;
-            AABox *primBound;
+            G3D::AABox *primBound;
             uint32 numPrims;
             int maxPrims;
         };
@@ -397,7 +375,8 @@ class BIH
 
         void buildHierarchy(std::vector<uint32> &tempTree, buildData &dat, BuildStats &stats);
 
-        void createNode(std::vector<uint32> &tempTree, int nodeIndex, uint32 left, uint32 right) {
+        void createNode(std::vector<uint32> &tempTree, int nodeIndex, uint32 left, uint32 right) const
+        {
             // write leaf node
             tempTree[nodeIndex + 0] = (3 << 30) | left;
             tempTree[nodeIndex + 1] = right - left + 1;

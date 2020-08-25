@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef _BIH_WRAP
@@ -34,22 +23,24 @@ class BIHWrap
         RayCallback& _callback;
         uint32 objects_size;
 
-        MDLCallback(RayCallback& callback, const T* const* objects_array, uint32 objects_size) : objects(objects_array), _callback(callback), objects_size(objects_size) {}
+        MDLCallback(RayCallback& callback, const T* const* objects_array, uint32 objects_size ) : objects(objects_array), _callback(callback), objects_size(objects_size) { }
 
-        bool operator() (const Ray& ray, uint32 Idx, float& MaxDist, bool /*stopAtFirst*/)
+        /// Intersect ray
+        bool operator() (const G3D::Ray& ray, uint32 idx, float& maxDist, bool stopAtFirstHit)
         {
-            if (Idx >= objects_size)
+            if (idx >= objects_size)
                 return false;
-            if (const T* obj = objects[Idx])
-                return _callback(ray, *obj, MaxDist/*, stopAtFirst*/);
+            if (const T* obj = objects[idx])
+                return _callback(ray, *obj, maxDist, stopAtFirstHit);
             return false;
         }
 
-        void operator() (const Vector3& p, uint32 Idx)
+        /// Intersect point
+        void operator() (const G3D::Vector3& p, uint32 idx)
         {
-             if (Idx >= objects_size)
+            if (idx >= objects_size)
                 return;
-            if (const T* obj = objects[Idx])
+            if (const T* obj = objects[idx])
                 _callback(p, *obj);
         }
     };
@@ -63,7 +54,7 @@ class BIHWrap
     int unbalanced_times;
 
 public:
-    BIHWrap() : unbalanced_times(0) {}
+    BIHWrap() : unbalanced_times(0) { }
 
     void insert(const T& obj)
     {
@@ -91,21 +82,21 @@ public:
         m_objects.fastClear();
         m_obj2Idx.getKeys(m_objects);
         m_objects_to_push.getMembers(m_objects);
-        //assert that m_obj2Idx has all the keys 
+        //assert that m_obj2Idx has all the keys
 
         m_tree.build(m_objects, BoundsFunc::getBounds2);
     }
 
     template<typename RayCallback>
-    void intersectRay(const Ray& ray, RayCallback& intersectCallback, float& maxDist)
+    void intersectRay(const G3D::Ray& ray, RayCallback& intersectCallback, float& maxDist, bool stopAtFirstHit)
     {
         balance();
         MDLCallback<RayCallback> temp_cb(intersectCallback, m_objects.getCArray(), m_objects.size());
-        m_tree.intersectRay(ray, temp_cb, maxDist, true);
+        m_tree.intersectRay(ray, temp_cb, maxDist, stopAtFirstHit);
     }
 
     template<typename IsectCallback>
-    void intersectPoint(const Vector3& point, IsectCallback& intersectCallback)
+    void intersectPoint(const G3D::Vector3& point, IsectCallback& intersectCallback)
     {
         balance();
         MDLCallback<IsectCallback> callback(intersectCallback, m_objects.getCArray(), m_objects.size());

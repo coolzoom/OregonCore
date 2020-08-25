@@ -1,18 +1,7 @@
 /*
- * This file is part of the OregonCore Project. See AUTHORS file for Copyright information
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; either version 2 of the License, or (at your
- * option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016+     AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license: https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-GPL2
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  */
 
 #ifndef _GAMEOBJECT_MODEL_H
@@ -23,7 +12,7 @@
 #include <G3D/AABox.h>
 #include <G3D/Ray.h>
 
-#include "Platform/Define.h"
+#include "Define.h"
 
 namespace VMAP
 {
@@ -35,7 +24,7 @@ struct GameObjectDisplayInfoEntry;
 
 class GameObjectModel /*, public Intersectable*/
 {
-    bool collision_enabled;
+    uint32 phasemask;
     G3D::AABox iBound;
     G3D::Matrix3 iInvRot;
     G3D::Vector3 iPos;
@@ -43,28 +32,31 @@ class GameObjectModel /*, public Intersectable*/
     float iInvScale;
     float iScale;
     VMAP::WorldModel* iModel;
+    GameObject const* owner;
 
-    GameObjectModel() : collision_enabled(false), iModel(nullptr) {}
+    GameObjectModel() : phasemask(0), iInvScale(0), iScale(0), iModel(NULL), owner(NULL) { }
     bool initialize(const GameObject& go, const GameObjectDisplayInfoEntry& info);
 
-    public:
-        std::string name;
+public:
+    std::string name;
 
-        const G3D::AABox& getBounds() const { return iBound; }
+    const G3D::AABox& getBounds() const { return iBound; }
 
-        ~GameObjectModel();
+    ~GameObjectModel();
 
-        const G3D::Vector3& getPosition() const { return iPos;}
+    const G3D::Vector3& getPosition() const { return iPos;}
 
-        /**    Enables\disables collision. */
-        void disable() { collision_enabled = false;}
-        void enable(bool enable) { collision_enabled = enable;}
+    /**    Enables\disables collision. */
+    void disable() { phasemask = 0;}
+    void enable(uint32 ph_mask) { phasemask = ph_mask;}
 
-        bool intersectRay(const G3D::Ray& Ray, float& MaxDist, bool StopAtFirstHit) const;
+    bool isEnabled() const {return phasemask != 0;}
 
-        static GameObjectModel* Create(const GameObject& go);
+    bool intersectRay(const G3D::Ray& Ray, float& MaxDist, bool StopAtFirstHit, uint32 ph_mask) const;
 
-        bool Relocate(GameObject const& go); 
+    static GameObjectModel* Create(const GameObject& go);
+
+    bool UpdatePosition();
 };
 
 #endif // _GAMEOBJECT_MODEL_H
