@@ -160,8 +160,8 @@ inline bool IsSpellIgnoringLOS(SpellEntry const* spellInfo)
     if (spellInfo->AttributesEx2 & SPELL_ATTR2_IGNORE_LOS)
         return true;
 
-    if (!VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
-        return true;
+    //if (!VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
+    //    return true;
 
     if (sDisableMgr.IsDisabledFor(DISABLE_TYPE_SPELL, spellInfo->Id, NULL, SPELL_DISABLE_LOS))
         return true;
