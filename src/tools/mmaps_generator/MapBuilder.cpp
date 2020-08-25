@@ -6,7 +6,7 @@
 
 #include "PathCommon.h"
 #include "MapBuilder.h"
-#include "Log.h"
+//#include "Log.h"
 #include "Maps/MapTree.h"
 #include "Models/ModelInstance.h"
 #include "Movement/MoveMapSharedDefines.h"

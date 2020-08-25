@@ -20,7 +20,7 @@
 
 #include "Common.h"
 #include "Policies/Singleton.h"
-//#include "Database/DatabaseEnv.h"
+#include "Database/DatabaseEnv.h"
 #include <string>
 
 class Config;

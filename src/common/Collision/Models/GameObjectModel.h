@@ -12,7 +12,7 @@
 #include <G3D/AABox.h>
 #include <G3D/Ray.h>
 
-#include "Define.h"
+#include "Platform/Define.h"
 
 namespace VMAP
 {
