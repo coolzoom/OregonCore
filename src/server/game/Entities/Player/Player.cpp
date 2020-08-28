@@ -2461,10 +2461,12 @@ void Player::SetGameMaster(bool on)
 
         getHostileRefManager().setOnlineOfflineState(false);
         CombatStopWithPets();
+        SetPhaseMask(uint32(PHASEMASK_ANYWHERE), false);    // see and visible in all phases
         m_serverSideVisibilityDetect.SetValue(SERVERSIDE_VISIBILITY_GM, GetSession()->GetSecurity());
     }
     else
     {
+        RestorePhase();
         m_ExtraFlags &= ~ PLAYER_EXTRA_GM_ON;
         setFactionForRace(getRace());
         RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GM);
@@ -6814,6 +6816,7 @@ void Player::DuelComplete(DuelCompleteType type)
     }
 
  
+    sScriptMgr.OnPlayerDuelEnd(duel->opponent, this, type);
 #ifdef ELUNA
    // used by eluna
     sEluna->OnDuelEnd(duel->opponent, this, type);
@@ -16188,6 +16191,27 @@ void Player::_LoadSkills(QueryResult* result)
     }
 }
 
+uint32 Player::GetPhaseMaskForSpawn() const
+{
+    uint32 phase = PHASEMASK_NORMAL;
+    if (!IsGameMaster())
+        phase = GetPhaseMask();
+    else
+    {
+        AuraList const& phases = GetAurasByType(SPELL_AURA_PHASE);
+        if (phases.empty())
+            phase = GetPhaseMask();
+        else
+            phase = phases.front()->GetMiscValue();
+    }
+
+    // some aura phases include 1 normal map in addition to phase itself
+    if (uint32 n_phase = phase & ~PHASEMASK_NORMAL)
+        return n_phase;
+
+    return PHASEMASK_NORMAL;
+}
+
 void Player::_LoadSpells(QueryResult* result)
 {
     m_spells.clear();
@@ -17563,6 +17587,7 @@ void Player::UpdateDuelFlag(time_t currTime)
     if (!duel || duel->startTimer == 0 || currTime < duel->startTimer + 3)
         return;
 
+    sScriptMgr.OnPlayerDuelStart(this, duel->opponent);
 
 #ifdef ELUNA
     // used by eluna
