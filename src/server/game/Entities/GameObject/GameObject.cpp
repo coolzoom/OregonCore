@@ -217,7 +217,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
         sLog.outBasic("Gameobject (GUID: %u Entry: %u) has no phaseMask using default phase!", guidlow, name_id);
         phaseMask = PHASEMASK_NORMAL;
     }
-    SetPhaseMask(phaseMask, false);
+    SetPhaseMask(phaseMask, false, false);
     SetFloatValue(GAMEOBJECT_POS_X, x);
     SetFloatValue(GAMEOBJECT_POS_Y, y);
     SetFloatValue(GAMEOBJECT_POS_Z, z);
@@ -695,8 +695,8 @@ void GameObject::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
        << m_DBTableGuid << ", "
        << GetUInt32Value(OBJECT_FIELD_ENTRY) << ", "
        << mapid << ", "
+        << (uint32)spawnMask << ", "
        << (uint32)phaseMask << ", "
-       << (uint32)spawnMask << ", "
        << GetFloatValue(GAMEOBJECT_POS_X) << ", "
        << GetFloatValue(GAMEOBJECT_POS_Y) << ", "
        << GetFloatValue(GAMEOBJECT_POS_Z) << ", "
@@ -1774,9 +1774,9 @@ void GameObject::SetDisplayId(uint32 displayid)
     UpdateModel();
 }
 
-void GameObject::SetPhaseMask(uint32 newPhaseMask, bool update)
+void GameObject::SetPhaseMask(uint32 newPhaseMask, bool update, bool individual)
 {
-    WorldObject::SetPhaseMask(newPhaseMask, update);
+    WorldObject::SetPhaseMask(newPhaseMask, update, individual);
 }
 
 void GameObject::EnableCollision(bool enable)

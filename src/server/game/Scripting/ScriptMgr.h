@@ -42,6 +42,7 @@ struct ItemPrototype;
 class Spell;
 class ScriptMgr;
 class WorldSocket;
+class GuildScript;
 
 #define VISIBLE_RANGE       (166.0f)                        //MAX visible range (size of grid)
 #define DEFAULT_TEXT        "<Trinity Script Text Entry Missing!>"
@@ -356,6 +357,28 @@ public:
     virtual void OnGossipSelectCode(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
 };
 
+
+class GuildScript : public ScriptObject
+{
+protected:
+    GuildScript(const char* name);
+
+public:
+
+    bool IsDatabaseBound() const { return false; }
+    
+    // Called when a guild is created.
+    virtual void OnCreate(Guild* /*guild*/, Player* /*leader*/, const std::string& /*name*/) { }
+
+    // Called when a guild is disbanded.
+    virtual void OnDisband(Guild* /*guild*/) { }
+
+    // Called when a member is added to the guild.
+    virtual void OnAddMember(Guild* /*guild*/, Player* /*player*/, uint32& /*plRank*/) { }
+
+    // Called when a member is removed from the guild.
+    virtual void OnRemoveMember(Guild* /*guild*/, Player* /*player*/, bool /*isDisbanding*/) { }
+};
 
 class FormulaScript : public ScriptObject
 {
@@ -722,6 +745,14 @@ public:
     virtual void OnPlayerMove(Player* /*player*/, MovementInfo /*movementInfo*/, uint32 /*opcode*/) {}
 };
 
+class UnitScript : public ScriptObject
+{
+protected: 
+    UnitScript(const char* name);
+public:
+    virtual void OnDealDamage(Unit* /*unit*/, uint32& /*Damage*/) {}
+};
+
 // Placed here due to ScriptRegistry::AddScript dependency.
 #define sScriptMgr (*ACE_Singleton<ScriptMgr, ACE_Null_Mutex>::instance())
 
@@ -926,6 +957,17 @@ public: /* BGScript */
     void OnBGAssignTeam(Player* player, Battleground* bg, uint32& team);
     void OnPlayerJoinBG(Player* player, Battleground* bg);
     void OnPlayerLeaveBG(Player* player, Battleground* bg);
+
+public : /* GuildScript*/
+
+    void OnGuildRemoveMember(Guild* guild, Player* player, bool isDisbanding);
+    void OnGuildAddMember(Guild* guild, Player* player, uint32& plRank);
+    void OnGuildCreate(Guild* guild, Player* leader, const std::string& name);
+    void OnGuildDisband(Guild* guild);
+
+public: /* Unit Script */
+
+    void OnDealDamage(Unit* unit, uint32& amount);
 
 public: /* ScriptRegistry */
 
