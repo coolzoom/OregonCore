@@ -28,6 +28,9 @@
 #include <stdarg.h>
 #include <fstream>
 #include <iostream>
+#include <stdarg.h>
+#include <stdio.h>
+#include "ace/OS.h"
 
 #include "ace/OS_NS_unistd.h"
 
@@ -916,13 +919,7 @@ void Log::outCommand(uint32 account, char const* str, ...)
 
     if (logfile && m_logFileLevel >= LOG_LVL_DETAIL)
     {
-        va_list ap;
-        outTimestamp(logfile);
-        va_start(ap, str);
-        vfprintf(logfile, str, ap);
-        fprintf(logfile, "\n");
-        va_end(ap);
-        fflush(logfile);
+        ACE_OS::sleep(1);
     }
 
     if (m_gmlog_per_account)
