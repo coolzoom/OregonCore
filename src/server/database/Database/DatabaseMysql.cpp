@@ -30,6 +30,10 @@
 #include "DatabaseEnv.h"
 #include "Timer.h"
 
+#if PLATFORM == PLATFORM_UNIX
+#include <sys/file.h>
+#endif
+
 size_t DatabaseMysql::db_count = 0;
 
 void DatabaseMysql::ThreadStart()
@@ -235,6 +239,99 @@ bool MySQLConnection::_Query(char const* sql, MYSQL_RES** pResult, MYSQL_FIELD**
 
     *pFields = mysql_fetch_fields(*pResult);
     return true;
+}
+
+bool DatabaseMysql::ExecuteFile(const char* file)
+{
+    if (!mMysql)
+        return false;
+
+    if (mysql_set_server_option(mMysql, MYSQL_OPTION_MULTI_STATEMENTS_ON))
+    {
+        sLog.outErrorDb("Cannot turn multi-statements on: %s", mysql_error(mMysql));
+        return false;
+    }
+
+    mysql_autocommit(mMysql, 0);
+    if (mysql_real_query(mMysql, "START TRANSACTION", sizeof("START TRANSACTION") - 1))
+    {
+        sLog.outErrorDb("Couldn't start transaction for db update file: %s", file);
+        return false;
+    }
+
+    bool in_transaction = true;
+    bool success = false;
+
+    if (FILE* fp = ACE_OS::fopen(file, "rb"))
+    {
+#if PLATFORM == PLATFORM_UNIX
+        flock(fileno(fp), LOCK_SH);
+#endif
+        //------
+
+        struct stat info;
+        fstat(fileno(fp), &info);
+
+        // if less than 1MB allocate on stack, else on heap
+        char* contents = (info.st_size > 1024 * 1024) ? new char[info.st_size] : (char*)alloca(info.st_size);
+
+        if (ACE_OS::fread(contents, info.st_size, 1, fp) == 1)
+        {
+            if (mysql_real_query(mMysql, contents, info.st_size))
+            {
+                sLog.outErrorDb("Cannot execute file %s, size: %lu: %s", file, info.st_size, mysql_error(mMysql));
+            }
+            else
+            {
+                do
+                {
+                    if (mysql_field_count(mMysql))
+                        if (MYSQL_RES* result = mysql_use_result(mMysql))
+                            mysql_free_result(result);
+                } while (0 == mysql_next_result(mMysql));
+
+                // check whether the last mysql_next_result ended with an error
+                if (*mysql_error(mMysql))
+                {
+                    success = false;
+                    sLog.outErrorDb("Cannot execute file %s, size: %lu: %s", file, info.st_size, mysql_error(mMysql));
+                    if (mysql_rollback(mMysql))
+                        sLog.outErrorDb("ExecuteFile(): Rollback ended with an error!");
+                    else
+                        in_transaction = false;
+                }
+                else
+                {
+                    if (mysql_commit(mMysql))
+                        sLog.outErrorDb("mysql_commit() failed. Update %s will not be applied!", file);
+                    else
+                        in_transaction = false;
+                    success = true;
+                }
+            }
+        }
+        else
+        {
+            sLog.outErrorDb("Couldn't read file %s, size: %lu", file, info.st_size);
+            return false;
+        }
+
+        // if allocated on heap, free memory
+        if (info.st_size > 1024 * 1024)
+            delete[] contents;
+
+        //------
+#if PLATFORM == PLATFORM_UNIX
+        flock(fileno(fp), LOCK_UN);
+#endif
+        ACE_OS::fclose(fp);
+    }
+
+    mysql_set_server_option(mMysql, MYSQL_OPTION_MULTI_STATEMENTS_OFF);
+    mysql_autocommit(mMysql, 1);
+    if (in_transaction)
+        mysql_rollback(mMysql);
+    return success;
 }
 
 bool DatabaseMysql::_Query(char const* sql, MYSQL_RES** pResult, MYSQL_FIELD** pFields, uint64* pRowCount, uint32* pFieldCount)

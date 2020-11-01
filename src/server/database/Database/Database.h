@@ -221,7 +221,7 @@ class Database
 
         bool Execute(char const* sql);
         bool PExecute(char const* format,...) ATTR_PRINTF(2,3);
-        bool ExecuteFile(const char* file);
+        //bool ExecuteFile(const char* file);
         // Writes SQL commands to a LOG file (see mangosd.conf "LogSQL")
         bool PExecuteLog(char const* format,...) ATTR_PRINTF(2,3);
 

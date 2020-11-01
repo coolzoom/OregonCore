@@ -123,6 +123,7 @@ class DatabaseMysql : public Database
         // must be call before finish thread run
         void ThreadEnd() override;
         bool _Query(char const* sql, MYSQL_RES** pResult, MYSQL_FIELD** pFields, uint64* pRowCount, uint32* pFieldCount);
+        bool ExecuteFile(const char* file);
     protected:
         SqlConnection* CreateConnection() override;
 
