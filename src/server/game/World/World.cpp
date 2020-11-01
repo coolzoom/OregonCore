@@ -1128,7 +1128,7 @@ void World::LoadSQLUpdates()
     const struct
     {
         // db pointer
-        DatabaseType* db;
+        Database* db;
         // path - sql/updates/(path)
         const char* path;
     } updates[]
@@ -1224,7 +1224,7 @@ void World::LoadModSQLUpdates()
     const struct
     {
         // db pointer
-        DatabaseType* db;
+        Database* db;
         // path - modules/mod_xxx/sql/(path)
         const char* path;
     } updates[]

@@ -357,6 +357,13 @@ bool Database::PExecuteLog(char const* format,...)
     return Execute(szQuery);
 }
 
+
+bool Database::ExecuteFile(const char* file)
+{
+    //TBD
+    return true;
+}
+
 QueryResult* Database::PQuery(char const* format,...)
 {
     if(!format) return nullptr;
